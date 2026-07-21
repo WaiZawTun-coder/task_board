@@ -1,17 +1,17 @@
 import { pool } from "@/lib/db.lib";
+import { headers } from "next/headers";
 
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get("user_id");
+    const userId = (await headers()).get("x-user-id");
 
     if (!userId) {
       return Response.json(
         {
           success: false,
-          error: "Missing user_id query parameter",
+          error: "Unauthorized",
         },
-        { status: 400 },
+        { status: 401 },
       );
     }
 

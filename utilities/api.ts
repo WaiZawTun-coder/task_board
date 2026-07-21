@@ -2,15 +2,20 @@ import { useAuth } from "@/context/AuthContext";
 import { getBackendUrl } from "./url";
 import { useCallback } from "react";
 
+type CustomRequestInit = Omit<RequestInit, "body"> & {
+  body?: BodyInit | Record<string, unknown> | null;
+};
+
 export const useApi = () => {
   const { accessToken, refresh, authLoading, logout } = useAuth();
 
   const apiFetch = useCallback(
-    async <T>(url: string, options: RequestInit = {}): Promise<T> => {
+    async <T>(url: string, options: CustomRequestInit = {}): Promise<T> => {
       const request = async (retry: boolean): Promise<T> => {
         if (authLoading) throw new Error("Authentication is still loading");
 
         const isFormData = options.body instanceof FormData;
+        const isString = typeof options.body === "string";
 
         const headers: HeadersInit = {
           ...(isFormData ? {} : { "Content-Type": "application/json" }),
@@ -18,14 +23,17 @@ export const useApi = () => {
           ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
         };
 
+        const formattedBody =
+          isFormData || isString
+            ? (options.body as BodyInit)
+            : options.body
+              ? JSON.stringify(options.body)
+              : undefined;
+
         const res = await fetch(getBackendUrl() + url, {
           method: options.method || "GET",
           headers,
-          body: isFormData
-            ? options.body
-            : options.body
-              ? JSON.stringify(options.body)
-              : undefined,
+          body: formattedBody,
           credentials: "include",
         });
 

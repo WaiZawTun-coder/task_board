@@ -21,7 +21,7 @@ const NotificationHeader = () => {
         <Bell className="cursor-pointer" />
         {/* </Button> */}
       </PopoverTrigger>
-      <PopoverContent className="w-md p-2">
+      <PopoverContent className="w-sm p-2">
         <div className="space-x-0 space-y-2">
           <p className="text-sm text-gray-500">Notifications</p>
           <div className="flex flex-col gap-2">

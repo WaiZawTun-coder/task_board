@@ -1,22 +1,30 @@
+"use client";
+
+import { useTask } from "@/context/TaskContext";
+import NewTask from "../newTask";
 import { ThemeToggle } from "../themeToggler";
-import { Button } from "../UI/button";
 import { Input } from "../UI/input";
 import NotificationHeader from "./notification-header";
 import ProfileHeader from "./profile-header";
 
 const DashboardHeader = () => {
+  const { createTask } = useTask();
+
   return (
-    <header className="bg-amber-600">
-      <div className="flex h-16 items-center px-6">
-        <Input placeholder="Search tasks..." className="max-w-sm px-4 py-2" />
+    <header className="border-b">
+      <div className="flex h-14 items-center gap-2 px-3 sm:h-16 sm:gap-4 sm:px-6">
+        {/* Search: hidden on mobile, visible from sm up */}
+        <Input
+          placeholder="Search tasks..."
+          className="hidden max-w-sm px-4 py-2 sm:block"
+        />
 
-        <div className="ml-auto flex items-center gap-4">
+        <div className="ml-auto flex items-center gap-1 sm:gap-4">
           <ThemeToggle />
-          <Button size="lg">New Task</Button>
 
-          {/* <Bell className="cursor-pointer" /> */}
+          <NewTask onCreate={createTask} />
+
           <NotificationHeader />
-
           <ProfileHeader />
         </div>
       </div>

@@ -48,5 +48,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/api/protected/:path"],
+  matcher: ["/api/protected/:path*"],
 };

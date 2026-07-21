@@ -5,6 +5,8 @@ import { DM_Sans, Geist, Geist_Mono, Roboto } from "next/font/google";
 import { ThemeProvider } from "../providers/themeProvider";
 import "./globals.css";
 import { NotificationProvider } from "@/context/NotificationContext";
+import { TaskProvider } from "@/context/TaskContext";
+import { ProjectProvider } from "@/context/ProjectContext";
 
 const dmSansHeading = DM_Sans({
   subsets: ["latin"],
@@ -46,11 +48,15 @@ export default function RootLayout({
         dmSansHeading.variable,
       )}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-screen flex flex-col">
         <AuthProvider>
-          <NotificationProvider>
-            <ThemeProvider>{children}</ThemeProvider>
-          </NotificationProvider>
+          <ProjectProvider>
+            <TaskProvider>
+              <NotificationProvider>
+                <ThemeProvider>{children}</ThemeProvider>
+              </NotificationProvider>
+            </TaskProvider>
+          </ProjectProvider>
         </AuthProvider>
       </body>
     </html>
