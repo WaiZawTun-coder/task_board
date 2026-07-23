@@ -49,6 +49,9 @@ export const useTask = () => useContext(TaskContext) as TaskContextType;
 
 export const TaskProvider = ({ children }: { children: React.ReactNode }) => {
   const [tasks, setTasks] = useState<TaskType[]>([]);
+  const [tasksMap, setTasksMap] = useState<Map<number, TaskType>>(
+    new Map<number, TaskType>(),
+  );
   const { user, authLoading } = useAuth();
   const taskLoading = useRef<boolean>(false);
 
@@ -97,13 +100,27 @@ export const TaskProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       const body = { title, description, due, user_id: user?.user_id };
 
-      const data: { success: boolean; message: string } = await fetchApi(
-        "/api/protected/task",
-        {
+      const data: { success: boolean; data: { task_id?: number } } =
+        await fetchApi("/api/protected/task", {
           method: "POST",
           body,
-        },
+        });
+
+      if (!data.data.task_id) {
+        throw new Error("Invalid task_id returned");
+      }
+
+      const newTask: { success: boolean; data: TaskType } = await fetchApi(
+        `/api/protected/task?task_id=${data.data.task_id}`,
       );
+
+      setTasks((prev) => [...prev, newTask.data]);
+      setTasksMap((prev) => {
+        const newMap = new Map(prev);
+        newMap.set(newTask.data.task_id, newTask.data);
+
+        return newMap;
+      });
 
       return data;
       // return { success: true, message: "Update this" };
@@ -145,6 +162,26 @@ export const TaskProvider = ({ children }: { children: React.ReactNode }) => {
         method: "PUT",
         body,
       });
+
+      if (data.success) {
+        setTasksMap((prev) => {
+          const newMap = new Map(prev);
+          const currentItem = newMap.get(task_id);
+
+          if (currentItem) {
+            newMap.set(task_id, {
+              task_id,
+              title: title || currentItem.title,
+              description: description || currentItem.description,
+              due: due || currentItem.due,
+              status: status || currentItem.status,
+              priority: priority || currentItem.priority,
+            });
+          }
+
+          return newMap;
+        });
+      }
 
       return data;
     } catch (err: unknown) {
