@@ -36,7 +36,8 @@ export function proxy(request: NextRequest) {
         headers: requestHeaders,
       },
     });
-  } catch {
+  } catch (err: unknown) {
+    console.error("Proxy error: ", { err });
     return NextResponse.json(
       {
         success: false,

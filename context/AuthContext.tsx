@@ -4,6 +4,7 @@ import { getBackendUrl } from "@/utilities/url";
 import { useRouter } from "next/navigation";
 import React, {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useRef,
@@ -57,44 +58,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const isInitialized = useRef(false);
 
-  useEffect(() => {
-    if (isInitialized.current) return;
-    let alive = true;
-
-    (async () => {
-      try {
-        const token = await refresh();
-        if (!alive || !token) return;
-
-        await getUser({ newToken: token });
-        // await getUser(token);
-
-        isInitialized.current = true;
-      } catch {
-        if (!alive) return;
-        setAccessToken(null);
-        setUser(null);
-        router.replace("/login");
-      } finally {
-        if (alive) setAuthLoading(false);
-      }
-    })();
-
-    return () => {
-      alive = false;
-    };
-  });
-
-  useEffect(() => {
-    if (!accessToken) {
-      setUser(null);
-    }
-
-    getUser({ newToken: accessToken! }).catch((err) => {
-      console.error("Error fetching user info:", err);
-    });
-  }, [accessToken]);
-
   const login = async ({
     username,
     password,
@@ -124,35 +87,38 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setAuthLoading(false);
   };
 
-  const getUser = async ({ newToken }: { newToken: string }) => {
-    if (accessToken && user) return;
+  const getUser = useCallback(
+    async ({ newToken }: { newToken: string }) => {
+      if (accessToken && user) return;
 
-    if (isRefreshing.current) return;
+      if (isRefreshing.current) return;
 
-    const res = await fetch(getBackendUrl() + "/api/protected/user", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${newToken}`,
-      },
-      credentials: "include",
-    });
+      const res = await fetch(getBackendUrl() + "/api/protected/user", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${newToken}`,
+        },
+        credentials: "include",
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (!res.ok)
-      throw new Error(
-        data.message || data.error || "Unable to fetch user info",
-      );
+      if (!res.ok)
+        throw new Error(
+          data.message || data.error || "Unable to fetch user info",
+        );
 
-    if (!data.success) {
-      throw new Error(
-        data.message || data.error || "Unable to fetch user info",
-      );
-    }
+      if (!data.success) {
+        throw new Error(
+          data.message || data.error || "Unable to fetch user info",
+        );
+      }
 
-    setUser(data.data);
-  };
+      setUser(data.data);
+    },
+    [accessToken, user],
+  );
 
   const logout = async () => {
     const res = await fetch(getBackendUrl() + "/api/protected/logout", {
@@ -210,11 +176,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         data.message || data.error || "Unable to register new User",
       );
     }
-
-    router.push("/login");
   };
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     if (isRefreshing.current) {
       return new Promise((resolve) => {
         const checkRefresh = () => {
@@ -252,7 +216,45 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     console.log({ accessToken: data.data.token });
 
     return data.data.token;
-  };
+  }, [accessToken]);
+
+  useEffect(() => {
+    if (isInitialized.current) return;
+    let alive = true;
+
+    (async () => {
+      try {
+        const token = await refresh();
+        if (!alive || !token) return;
+
+        await getUser({ newToken: token });
+        // await getUser(token);
+
+        isInitialized.current = true;
+      } catch {
+        if (!alive) return;
+        setAccessToken(null);
+        setUser(null);
+        router.replace("/login");
+      } finally {
+        if (alive) setAuthLoading(false);
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, [getUser, refresh, router]);
+
+  useEffect(() => {
+    if (!accessToken) {
+      setUser(null);
+    }
+
+    getUser({ newToken: accessToken! }).catch((err) => {
+      console.error("Error fetching user info:", err);
+    });
+  }, [accessToken, getUser]);
 
   return (
     <AuthContext.Provider

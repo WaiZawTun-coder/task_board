@@ -17,7 +17,7 @@ type NotificationContextType = {
   notify: (
     title: string,
     message: string,
-    type: "success" | "error" | "info"
+    type: "success" | "error" | "info",
   ) => void;
   loadNotifications: () => void;
 };
@@ -52,7 +52,7 @@ export const NotificationProvider = ({
     setNotifications((prev) => [
       ...prev,
       {
-        id: new Date().getMilliseconds(),
+        id: crypto.randomUUID(),
         title,
         message,
         type,

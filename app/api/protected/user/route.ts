@@ -36,6 +36,7 @@ export async function GET() {
       data: userInfo,
     });
   } catch (err: unknown) {
+    console.error("User get: ", { err });
     return Response.json(
       {
         success: false,

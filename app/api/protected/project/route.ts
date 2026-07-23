@@ -29,6 +29,7 @@ export async function GET(request: Request) {
       { status: 200 },
     );
   } catch (err: unknown) {
+    console.error("Get project: ", { err });
     return Response.json({ success: false, err }, { status: 500 });
   }
 }
@@ -112,6 +113,7 @@ export async function POST(request: Request) {
       { status: 200 },
     );
   } catch (err: unknown) {
+    console.error("Project POST: ", { err });
     return Response.json({ success: false, err }, { status: 500 });
   }
 }
@@ -217,6 +219,7 @@ export async function PUT(request: Request) {
       { status: 200 },
     );
   } catch (err: unknown) {
+    console.error("Project put: ", { err });
     return Response.json({ success: false, err }, { status: 500 });
   }
 }
@@ -259,6 +262,7 @@ export async function DELETE(request: Request) {
       { status: 200 },
     );
   } catch (err: unknown) {
+    console.error("Project delete: ", { err });
     return Response.json({ success: false, err }, { status: 500 });
   }
 }

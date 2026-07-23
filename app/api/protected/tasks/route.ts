@@ -71,7 +71,7 @@ export async function GET(request: Request) {
       { status: 200 },
     );
   } catch (err: unknown) {
-    console.log({ err });
+    console.log("Tasks get: ", { err });
     return Response.json(
       {
         success: false,

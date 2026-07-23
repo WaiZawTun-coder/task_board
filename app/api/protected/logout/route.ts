@@ -1,12 +1,12 @@
 import { pool } from "@/lib/db.lib";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 
-export async function POST(request: Request) {
+export async function POST() {
   try {
-    const { userId } = await request.json();
+    const userId = (await headers()).get("x-user-id");
 
     // validate required fields
-    if (!userId || userId <= 0) {
+    if (!userId) {
       return Response.json(
         {
           success: false,
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
       { status: 200 },
     );
   } catch (err: unknown) {
-    console.log("Error", err);
+    console.log("User logout", { err });
     return Response.json(
       {
         success: false,

@@ -10,6 +10,7 @@ export async function GET() {
       message: "This is a protected route, you have access to it!",
     });
   } catch (err: unknown) {
+    console.error("Test get: ", { err });
     return Response.json(
       {
         success: false,

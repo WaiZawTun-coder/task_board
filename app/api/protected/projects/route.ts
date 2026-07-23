@@ -63,6 +63,7 @@ export async function GET(request: Request) {
       { status: 200 },
     );
   } catch (err: unknown) {
+    console.error("Projects get: ", { err });
     return Response.json(
       {
         success: false,

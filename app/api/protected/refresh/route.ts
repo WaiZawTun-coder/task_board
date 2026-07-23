@@ -65,6 +65,7 @@ export async function POST() {
     (await cookies()).set("refreshToken", newRefreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
     });
 
     return Response.json({
@@ -74,6 +75,7 @@ export async function POST() {
       },
     });
   } catch (err: unknown) {
+    console.error("Refresh token: ", { err });
     return Response.json(
       {
         success: false,

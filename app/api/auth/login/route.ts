@@ -72,6 +72,7 @@ export async function POST(request: Request) {
     (await cookies()).set("refreshToken", refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
     });
 
     return Response.json({
@@ -84,6 +85,7 @@ export async function POST(request: Request) {
       },
     });
   } catch (err: unknown) {
+    console.error("User login: ", { err });
     return Response.json(
       {
         success: false,

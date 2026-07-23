@@ -75,6 +75,7 @@ export async function POST(request: Request) {
       { status: 201 },
     );
   } catch (err: unknown) {
+    console.error("User register: ", { err });
     // Handle unexpected errors
     return Response.json(
       {

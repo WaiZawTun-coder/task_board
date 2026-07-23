@@ -1,5 +1,5 @@
 type NotificationType = {
-  id?: number;
+  id?: number | string;
   title: string;
   message: string;
   type: "success" | "error" | "info";
