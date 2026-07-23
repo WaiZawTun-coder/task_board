@@ -213,8 +213,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     isRefreshing.current = false;
 
-    console.log({ accessToken: data.data.token });
-
     return data.data.token;
   }, [accessToken]);
 

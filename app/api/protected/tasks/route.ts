@@ -57,9 +57,6 @@ export async function GET(request: Request) {
 
     // Add sorting to keep results organized
     baseQuery += ` ${whereConditions.length === 0 && "WHERE"} user_id = $${paramIndex++} ORDER BY created_at DESC`;
-
-    console.log({ baseQuery, values: [...queryValues, user_id] });
-
     // Execute your query here using your database client
     const result = await pool.query(baseQuery, [...queryValues, user_id]);
 
@@ -71,7 +68,7 @@ export async function GET(request: Request) {
       { status: 200 },
     );
   } catch (err: unknown) {
-    console.log("Tasks get: ", { err });
+    console.error("Tasks get: ", { err });
     return Response.json(
       {
         success: false,

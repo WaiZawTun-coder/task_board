@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "./lib/jwt.lib";
+import { ratelimit } from "./lib/rate-limit.lib";
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   try {
+    const ip = request.headers.get("x-forwarded-for") ?? "127.0.0.1";
+    const { success } = await ratelimit.limit(ip);
+
+    if (!success) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
     const token = request.cookies.get("refreshToken")?.value;
 
     if (!token) {

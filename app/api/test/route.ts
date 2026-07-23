@@ -9,7 +9,7 @@ export async function GET() {
       time: result.rows[0],
     });
   } catch (err: unknown) {
-    console.log("Error in GET /api/test:", err);
+    console.error("Error in GET /api/test:", err);
     return Response.json(
       {
         success: false,

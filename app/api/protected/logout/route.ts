@@ -50,7 +50,7 @@ export async function POST() {
       { status: 200 },
     );
   } catch (err: unknown) {
-    console.log("User logout", { err });
+    console.error("User logout", { err });
     return Response.json(
       {
         success: false,
