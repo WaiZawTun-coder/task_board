@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -25,6 +25,9 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/UI/sheet";
+import NewProject from "./newProject";
+import { useProject } from "@/context/ProjectContext";
+import ProjectType from "@/lib/types/project";
 
 type NavChild = {
   href: string;
@@ -216,10 +219,18 @@ function ProjectsSection({
   onAddProject,
 }: {
   collapsed: boolean;
-  projects: Project[];
+  projects: ProjectType[];
   loading: boolean;
   onNavigate?: () => void;
-  onAddProject: () => void;
+  onAddProject: ({
+    title,
+    description,
+    color_hex,
+  }: {
+    title: string;
+    description?: string;
+    color_hex: string;
+  }) => Promise<{ success: boolean; message: string }>;
 }) {
   const pathname = usePathname();
   const [expanded, setExpanded] = useState(true);
@@ -245,14 +256,14 @@ function ProjectsSection({
           <ProjectsSkeleton collapsed />
         ) : (
           projects.map((project) => {
-            const href = `/projects/${project.id}`;
+            const href = `/projects/${project.project_id}`;
             const active = isActivePath(pathname, href);
             return (
-              <li key={project.id}>
+              <li key={project.project_id}>
                 <Link
                   href={href}
                   onClick={onNavigate}
-                  title={project.name}
+                  title={project.title}
                   aria-current={active ? "page" : undefined}
                   className={cn(
                     "flex items-center justify-center rounded-lg px-0 py-2 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
@@ -261,7 +272,7 @@ function ProjectsSection({
                 >
                   <span
                     className="h-2.5 w-2.5 shrink-0 rounded-full"
-                    style={{ backgroundColor: project.color }}
+                    style={{ backgroundColor: project.color_hex }}
                   />
                 </Link>
               </li>
@@ -290,14 +301,7 @@ function ProjectsSection({
           />
           Projects
         </button>
-        <Button
-          variant="ghost"
-          size="icon-xs"
-          aria-label="Add project"
-          onClick={onAddProject}
-        >
-          <Plus className="h-3.5 w-3.5" />
-        </Button>
+        <NewProject onCreate={onAddProject} />
       </div>
 
       {expanded && (
@@ -312,10 +316,10 @@ function ProjectsSection({
             </li>
           ) : (
             projects.map((project) => {
-              const href = `/projects/${project.id}`;
+              const href = `/projects/${project.project_id}`;
               const active = isActivePath(pathname, href);
               return (
-                <li key={project.id}>
+                <li key={project.project_id}>
                   <Link
                     href={href}
                     onClick={onNavigate}
@@ -329,9 +333,9 @@ function ProjectsSection({
                   >
                     <span
                       className="h-2 w-2 shrink-0 rounded-full"
-                      style={{ backgroundColor: project.color }}
+                      style={{ backgroundColor: project.color_hex }}
                     />
-                    <span className="truncate">{project.name}</span>
+                    <span className="truncate">{project.title}</span>
                   </Link>
                 </li>
               );
@@ -348,8 +352,13 @@ const Sidebar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [hydrated, setHydrated] = useState(false);
-  const [projects, setProjects] = useState<Project[]>([]);
   const [projectsLoading, setProjectsLoading] = useState(true);
+
+  const { projects, createProject, isProjectsLoading } = useProject();
+
+  useEffect(() => {
+    console.log("Projects", projects);
+  }, [projects]);
 
   // Restore collapsed preference (client-only to avoid hydration mismatch).
   useEffect(() => {
@@ -375,23 +384,48 @@ const Sidebar = () => {
 
   // Simulated fetch — swap for a real `/api/protected/project` call
   // scoped to the current user.
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      setProjects([
-        { id: "website-redesign", name: "Website Redesign", color: "#3b82f6" },
-        { id: "mobile-app", name: "Mobile App", color: "#a855f7" },
-        { id: "q4-marketing", name: "Q4 Marketing", color: "#22c55e" },
-      ]);
-      setProjectsLoading(false);
-    }, 600);
-    return () => clearTimeout(timeout);
-  }, []);
+  // useEffect(() => {
+  //   const timeout = setTimeout(() => {
+  //     setProjects([
+  //       { id: "website-redesign", name: "Website Redesign", color: "#3b82f6" },
+  //       { id: "mobile-app", name: "Mobile App", color: "#a855f7" },
+  //       { id: "q4-marketing", name: "Q4 Marketing", color: "#22c55e" },
+  //     ]);
+  //     setProjectsLoading(false);
+  //   }, 600);
+  //   return () => clearTimeout(timeout);
+  // }, []);
 
-  const handleAddProject = () => {
-    // Replace with opening a "Create project" dialog / navigating to
-    // a create-project route.
-    console.log("Add project clicked");
-  };
+  const handleAddProject = useCallback(
+    async ({
+      title,
+      description,
+      color_hex,
+    }: {
+      title: string;
+      description?: string;
+      color_hex: string;
+    }): Promise<{ success: boolean; message: string }> => {
+      // Replace with opening a "Create project" dialog / navigating to
+      // a create-project route.
+      try {
+        const data: { success: boolean; message?: string } =
+          await createProject({ title, description, color_hex });
+
+        if (!data.success)
+          return {
+            success: false,
+            message: data.message || "Unable to create project",
+          };
+
+        return { success: false, message: "Project created successful" };
+      } catch {
+        // throw new Error("Unable to create project");
+        return { success: false, message: "Unable to create project" };
+      }
+    },
+    [createProject],
+  );
 
   const sidebarBody = (collapsed: boolean, onNavigate?: () => void) => (
     <>
@@ -404,7 +438,7 @@ const Sidebar = () => {
       <ProjectsSection
         collapsed={collapsed}
         projects={projects}
-        loading={projectsLoading}
+        loading={isProjectsLoading}
         onNavigate={onNavigate}
         onAddProject={handleAddProject}
       />

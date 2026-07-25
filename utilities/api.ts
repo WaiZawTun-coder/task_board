@@ -44,6 +44,7 @@ export const useApi = () => {
 
         if (!res.ok) {
           if (res.status === 401 && retry) {
+            console.log("refreshing in api.ts 47");
             await refresh();
             return request(false);
           }

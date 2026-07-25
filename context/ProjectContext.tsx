@@ -2,11 +2,18 @@
 
 import ProjectType from "@/lib/types/project";
 import { useApi } from "@/utilities/api";
-import { createContext, useContext, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import { useAuth } from "./AuthContext";
 
 type ProjectContextType = {
   projects: ProjectType[];
+  isProjectsLoading: boolean;
   createProject: ({
     title,
     description,
@@ -53,9 +60,34 @@ export const ProjectProvider = ({
   const { authLoading, user } = useAuth();
 
   const [projects, setProjects] = useState<ProjectType[]>([]);
-  const [projectsMap, setProjectsMap] = useState<Map<number, ProjectType>>(
-    new Map<number, ProjectType>(),
-  );
+  const [isProjectsLoading, setIsProjectLoading] = useState<boolean>(false);
+  // const [projectsMap, setProjectsMap] = useState<Map<number, ProjectType>>(
+  //   new Map<number, ProjectType>(),
+  // );
+
+  const getProjects = useCallback(async () => {
+    try {
+      setIsProjectLoading(true);
+      const data: {
+        success: boolean;
+        data: ProjectType[];
+        message?: string;
+        error?: string;
+      } = await fetchApi("/api/protected/projects");
+
+      if (!data.success) {
+        throw new Error(
+          data.message || data.error || "Unexpected error occured",
+        );
+      }
+
+      setProjects(data.data);
+    } catch (err: unknown) {
+      throw err;
+    } finally {
+      setIsProjectLoading(false);
+    }
+  }, [fetchApi]);
 
   const createProject = async ({
     title,
@@ -82,12 +114,12 @@ export const ProjectProvider = ({
         );
 
       setProjects((prev) => [...prev, newProject.data]);
-      setProjectsMap((prev) => {
-        const newMap = new Map(prev);
-        newMap.set(data.data.project_id, newProject.data);
+      // setProjectsMap((prev) => {
+      //   const newMap = new Map(prev);
+      //   newMap.set(data.data.project_id, newProject.data);
 
-        return newMap;
-      });
+      //   return newMap;
+      // });
 
       return data;
     } catch (err: unknown) {
@@ -133,23 +165,21 @@ export const ProjectProvider = ({
       );
 
       if (data.success) {
-        setProjectsMap((prev) => {
-          const newMap = new Map(prev);
-          const currentItem = newMap.get(project_id);
-
-          if (currentItem) {
-            newMap.set(project_id, {
-              project_id,
-              title: title || currentItem.title,
-              slug: slug || currentItem.slug,
-              description: description || currentItem.description,
-              status: status || currentItem.status,
-              colorHex: color_hex || currentItem.colorHex,
-            });
-          }
-
-          return newMap;
-        });
+        // setProjectsMap((prev) => {
+        //   const newMap = new Map(prev);
+        //   const currentItem = newMap.get(project_id);
+        //   if (currentItem) {
+        //     newMap.set(project_id, {
+        //       project_id,
+        //       title: title || currentItem.title,
+        //       slug: slug || currentItem.slug,
+        //       description: description || currentItem.description,
+        //       status: status || currentItem.status,
+        //       colorHex: color_hex || currentItem.colorHex,
+        //     });
+        //   }
+        //   return newMap;
+        // });
       }
 
       return data;
@@ -167,9 +197,22 @@ export const ProjectProvider = ({
     return { success: false };
   };
 
+  useEffect(() => {
+    const loadProjects = async () => {
+      await getProjects();
+    };
+    loadProjects();
+  }, [getProjects]);
+
   return (
     <ProjectContext.Provider
-      value={{ projects, createProject, updateProject, deleteProject }}
+      value={{
+        projects,
+        createProject,
+        updateProject,
+        deleteProject,
+        isProjectsLoading,
+      }}
     >
       {children}
     </ProjectContext.Provider>

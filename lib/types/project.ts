@@ -4,7 +4,7 @@ type ProjectType = {
   slug: string;
   description: string;
   status: "active" | "archived" | "completed";
-  colorHex: string;
+  color_hex: string;
 };
 
 export default ProjectType;

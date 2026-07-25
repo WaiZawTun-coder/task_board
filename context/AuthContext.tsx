@@ -58,34 +58,38 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const isInitialized = useRef(false);
 
-  const login = async ({
-    username,
-    password,
-    rememberMe,
-  }: {
-    username: string;
-    password: string;
-    rememberMe: boolean;
-  }) => {
-    const res = await fetch(getBackendUrl() + "/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ username, password, rememberMe }),
-    });
+  const login = useCallback(
+    async ({
+      username,
+      password,
+      rememberMe,
+    }: {
+      username: string;
+      password: string;
+      rememberMe: boolean;
+    }) => {
+      const res = await fetch(getBackendUrl() + "/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ username, password, rememberMe }),
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (!res.ok) throw new Error(data.message || data.error || "Unknown Error");
+      if (!res.ok)
+        throw new Error(data.message || data.error || "Unknown Error");
 
-    if (!data.success) {
-      throw new Error(data.message || data.error || "Unable to login");
-    }
+      if (!data.success) {
+        throw new Error(data.message || data.error || "Unable to login");
+      }
 
-    setAccessToken(data.data.token);
-    setUser(data.data);
-    setAuthLoading(false);
-  };
+      setAccessToken(data.data.token);
+      setUser(data.data);
+      setAuthLoading(false);
+    },
+    [],
+  );
 
   const getUser = useCallback(
     async ({ newToken }: { newToken: string }) => {
@@ -120,7 +124,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     [accessToken, user],
   );
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     const res = await fetch(getBackendUrl() + "/api/protected/logout", {
       method: "POST",
       credentials: "include",
@@ -145,38 +149,41 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setUser(null);
 
     router.replace("/login");
-  };
+  }, [accessToken, router, user?.user_id]);
 
-  const register = async ({
-    username,
-    email,
-    password,
-  }: {
-    username: string;
-    email: string;
-    password: string;
-  }) => {
-    const res = await fetch(getBackendUrl() + "/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ username, email, password }),
-    });
+  const register = useCallback(
+    async ({
+      username,
+      email,
+      password,
+    }: {
+      username: string;
+      email: string;
+      password: string;
+    }) => {
+      const res = await fetch(getBackendUrl() + "/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ username, email, password }),
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (!res.ok) {
-      throw new Error(
-        data.message || data.error || "Unable to register new User",
-      );
-    }
+      if (!res.ok) {
+        throw new Error(
+          data.message || data.error || "Unable to register new User",
+        );
+      }
 
-    if (!data.success) {
-      throw new Error(
-        data.message || data.error || "Unable to register new User",
-      );
-    }
-  };
+      if (!data.success) {
+        throw new Error(
+          data.message || data.error || "Unable to register new User",
+        );
+      }
+    },
+    [],
+  );
 
   const refresh = useCallback(async () => {
     if (isRefreshing.current) {
@@ -222,6 +229,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     (async () => {
       try {
+        console.log("refreshing in authContext.tsx 232");
         const token = await refresh();
         if (!alive || !token) return;
 
