@@ -11,6 +11,8 @@ import React, {
   useState,
 } from "react";
 
+let refreshRequest: Promise<string> | null = null;
+
 type AuthContextType = {
   user: {
     email: string;
@@ -40,7 +42,7 @@ type AuthContextType = {
     email: string;
     password: string;
   }) => Promise<void>;
-  refresh: () => Promise<void>;
+  refresh: () => Promise<string>;
   isAuthenticated: boolean;
 };
 
@@ -52,9 +54,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [user, setUser] = useState<AuthContextType["user"] | null>(null);
-  const [authLoading, setAuthLoading] = useState<boolean>(false);
-
-  const isRefreshing = useRef(false);
+  const [authLoading, setAuthLoading] = useState<boolean>(true);
 
   const isInitialized = useRef(false);
 
@@ -93,10 +93,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const getUser = useCallback(
     async ({ newToken }: { newToken: string }) => {
-      if (accessToken && user) return;
-
-      if (isRefreshing.current) return;
-
       const res = await fetch(getBackendUrl() + "/api/protected/user", {
         method: "GET",
         headers: {
@@ -121,7 +117,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       setUser(data.data);
     },
-    [accessToken, user],
+    [],
   );
 
   const logout = useCallback(async () => {
@@ -185,46 +181,45 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     [],
   );
 
-  const refresh = useCallback(async () => {
-    if (isRefreshing.current) {
-      return new Promise((resolve) => {
-        const checkRefresh = () => {
-          if (!isRefreshing.current) {
-            resolve(accessToken);
-          } else {
-            setTimeout(checkRefresh, 100);
-          }
-        };
-        checkRefresh();
+  const refresh = useCallback((): Promise<string> => {
+    if (refreshRequest) return refreshRequest;
+
+    refreshRequest = (async () => {
+      const res = await fetch(getBackendUrl() + "/api/protected/refresh", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
       });
-    }
 
-    isRefreshing.current = true;
+      const data = await res.json();
+      if (!res.ok)
+        throw new Error(data.message || data.error || "Unable to validate user");
 
-    const res = await fetch(getBackendUrl() + "/api/protected/refresh", {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
+      if (!data.success)
+        throw new Error(data.message || data.error || "Unable to validate user");
+
+      setAccessToken(data.data.token);
+      return data.data.token;
+    })();
+
+    refreshRequest.then(
+      () => {
+        refreshRequest = null;
       },
-    });
+      () => {
+        refreshRequest = null;
+      },
+    );
 
-    const data = await res.json();
-    if (!res.ok)
-      throw new Error(data.message || data.error || "Unable to validate user");
-
-    if (!data.success)
-      throw new Error(data.message || data.error || "Unable to validate user");
-
-    setAccessToken(data.data.token);
-
-    isRefreshing.current = false;
-
-    return data.data.token;
-  }, [accessToken]);
+    return refreshRequest;
+  }, []);
 
   useEffect(() => {
     if (isInitialized.current) return;
+    isInitialized.current = true;
+
     let alive = true;
 
     (async () => {
@@ -234,8 +229,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         await getUser({ newToken: token });
         // await getUser(token);
-
-        isInitialized.current = true;
       } catch {
         if (!alive) return;
         setAccessToken(null);
