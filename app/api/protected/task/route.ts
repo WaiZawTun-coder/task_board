@@ -1,10 +1,12 @@
 import { pool } from "@/lib/db.lib";
+import { headers } from "next/headers";
 
 export async function GET(request: Request) {
   try {
     // get data from request url
     const { searchParams } = new URL(request.url);
     const task_id = searchParams.get("task_id");
+    const user_id = (await headers()).get("x-user-id");
 
     // valid task_id
     if (!task_id) {
@@ -18,8 +20,8 @@ export async function GET(request: Request) {
     }
 
     // get task data from database
-    const query = "SELECT * FROM tasks WHERE task_id = $1";
-    const result = await pool.query(query, [task_id]);
+    const query = "SELECT * FROM tasks WHERE task_id = $1 AND user_id = $2";
+    const result = await pool.query(query, [task_id, user_id]);
 
     // return task data
     return Response.json(
@@ -45,7 +47,9 @@ export async function POST(request: Request) {
   try {
     // Extract data from request body
     const body = await request.json();
-    const { title, description, due, user_id, project_id } = body;
+    const { title, description, due, project_id } = body;
+
+    const user_id = (await headers()).get("x-user-id");
 
     if (!user_id) {
       return Response.json({

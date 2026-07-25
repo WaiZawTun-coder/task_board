@@ -418,7 +418,7 @@ const Sidebar = () => {
             message: data.message || "Unable to create project",
           };
 
-        return { success: false, message: "Project created successful" };
+        return { success: true, message: "Project created successful" };
       } catch {
         // throw new Error("Unable to create project");
         return { success: false, message: "Unable to create project" };

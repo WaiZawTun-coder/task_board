@@ -61,9 +61,6 @@ export const ProjectProvider = ({
 
   const [projects, setProjects] = useState<ProjectType[]>([]);
   const [isProjectsLoading, setIsProjectLoading] = useState<boolean>(false);
-  // const [projectsMap, setProjectsMap] = useState<Map<number, ProjectType>>(
-  //   new Map<number, ProjectType>(),
-  // );
 
   const getProjects = useCallback(async () => {
     try {
@@ -101,8 +98,10 @@ export const ProjectProvider = ({
     try {
       const body = { title, description, color_hex };
 
-      const data: { success: boolean; data: ProjectType } =
-        await fetchApi("/api/protected/project", { method: "POST", body });
+      const data: { success: boolean; data: ProjectType } = await fetchApi(
+        "/api/protected/project",
+        { method: "POST", body },
+      );
 
       if (!data.data?.project_id) {
         throw new Error("Invalid project_id returned");
