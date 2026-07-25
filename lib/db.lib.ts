@@ -1,10 +1,12 @@
-import { Pool } from "pg";
+import { Pool, types } from "pg";
 import fs from "fs";
 import url from "url";
 
 const globalForPool = global as unknown as {
   pool: Pool | undefined;
 };
+
+types.setTypeParser(types.builtins.INT8, Number);
 
 export const pool =
   globalForPool.pool ||

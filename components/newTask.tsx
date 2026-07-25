@@ -20,17 +20,28 @@ import { format } from "date-fns";
 import { Calendar } from "./UI/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "./UI/popover";
 import { TimePicker } from "./time-picker";
+import { useProject } from "@/context/ProjectContext";
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "./UI/combobox";
 
 type NewTaskFormData = {
   title: string;
   description: string;
   due: Date | undefined;
+  project_id: number | undefined;
 };
 
 const INITIAL_FORM: NewTaskFormData = {
   title: "",
   description: "",
   due: undefined,
+  project_id: undefined,
 };
 
 type NewTaskProps = {
@@ -50,6 +61,7 @@ const NewTask = ({
   triggerSize = "lg",
   className,
 }: NewTaskProps) => {
+  const { projects, isProjectsLoading } = useProject();
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState<NewTaskFormData>(INITIAL_FORM);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -162,6 +174,36 @@ const NewTask = ({
               value={formData.description}
               onChange={(e) => handleChange("description", e.target.value)}
             />
+          </div>
+
+          <div className="space-y-1.5">
+            <label htmlFor="task-project" className="text-sm font-medium">
+              Project
+            </label>
+            <Combobox
+              items={projects.map((project) => project.title)}
+              onValueChange={(item) =>
+                handleChange(
+                  "project_id",
+                  projects.filter((project) => project.title === item)[0]
+                    ?.project_id,
+                )
+              }
+            >
+              <ComboboxInput placeholder="Select a project" />
+              <ComboboxContent>
+                <ComboboxEmpty>No items found</ComboboxEmpty>
+                <ComboboxList>
+                  {(item) => {
+                    return (
+                      <ComboboxItem key={item} value={item}>
+                        {item}
+                      </ComboboxItem>
+                    );
+                  }}
+                </ComboboxList>
+              </ComboboxContent>
+            </Combobox>
           </div>
 
           <div className="space-y-1.5">

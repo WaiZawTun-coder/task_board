@@ -18,10 +18,12 @@ type TaskContextType = {
     title,
     description,
     due,
+    project_id,
   }: {
     title: string;
     description?: string;
     due?: Date;
+    project_id?: number;
   }) => Promise<{
     success: boolean;
     message?: string;
@@ -89,16 +91,18 @@ export const TaskProvider = ({ children }: { children: React.ReactNode }) => {
     title,
     description,
     due,
+    project_id,
   }: {
     title: string;
     description?: string;
     due?: Date;
+    project_id?: number;
   }): Promise<{
     success: boolean;
     message?: string;
   }> => {
     try {
-      const body = { title, description, due, user_id: user?.user_id };
+      const body = { title, description, due, project_id };
 
       const data: { success: boolean; data: TaskType } =
         await fetchApi("/api/protected/task", {
