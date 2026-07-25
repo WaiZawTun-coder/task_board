@@ -102,7 +102,7 @@ export async function POST(request: Request) {
       queryValues.push(project_id);
     }
 
-    const saveQuery = `${baseQuery} (${columns.join(", ")}) VALUES (${valuesIndex.join(", ")}) RETURNING task_id`;
+    const saveQuery = `${baseQuery} (${columns.join(", ")}) VALUES (${valuesIndex.join(", ")}) RETURNING *`;
 
     const result = await pool.query(saveQuery, queryValues);
 

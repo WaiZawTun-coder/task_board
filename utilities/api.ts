@@ -11,7 +11,10 @@ export const useApi = () => {
 
   const apiFetch = useCallback(
     async <T>(url: string, options: CustomRequestInit = {}): Promise<T> => {
-      const request = async (retry: boolean): Promise<T> => {
+      const request = async (
+        retry: boolean,
+        token = accessToken,
+      ): Promise<T> => {
         if (authLoading) throw new Error("Authentication is still loading");
 
         const isFormData = options.body instanceof FormData;
@@ -20,7 +23,7 @@ export const useApi = () => {
         const headers: HeadersInit = {
           ...(isFormData ? {} : { "Content-Type": "application/json" }),
           ...options.headers,
-          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         };
 
         const formattedBody =
@@ -44,13 +47,12 @@ export const useApi = () => {
 
         if (!res.ok) {
           if (res.status === 401 && retry) {
-            console.log("refreshing in api.ts 47");
-            await refresh();
-            return request(false);
+            const refreshedToken = await refresh();
+            return request(false, refreshedToken);
           }
 
           if (res.status === 403) {
-            logout();
+            void logout();
             throw new Error("Unauthorized");
           }
 

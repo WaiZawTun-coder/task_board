@@ -100,24 +100,20 @@ export const TaskProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       const body = { title, description, due, user_id: user?.user_id };
 
-      const data: { success: boolean; data: { task_id?: number } } =
+      const data: { success: boolean; data: TaskType } =
         await fetchApi("/api/protected/task", {
           method: "POST",
           body,
         });
 
-      if (!data.data.task_id) {
+      if (!data.data?.task_id) {
         throw new Error("Invalid task_id returned");
       }
 
-      const newTask: { success: boolean; data: TaskType } = await fetchApi(
-        `/api/protected/task?task_id=${data.data.task_id}`,
-      );
-
-      setTasks((prev) => [...prev, newTask.data]);
+      setTasks((prev) => [...prev, data.data]);
       setTasksMap((prev) => {
         const newMap = new Map(prev);
-        newMap.set(newTask.data.task_id, newTask.data);
+        newMap.set(data.data.task_id, data.data);
 
         return newMap;
       });

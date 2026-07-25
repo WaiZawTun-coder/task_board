@@ -101,19 +101,14 @@ export const ProjectProvider = ({
     try {
       const body = { title, description, color_hex };
 
-      const data: { success: boolean; data: { project_id: number } } =
+      const data: { success: boolean; data: ProjectType } =
         await fetchApi("/api/protected/project", { method: "POST", body });
 
-      if (!data.data.project_id) {
+      if (!data.data?.project_id) {
         throw new Error("Invalid project_id returned");
       }
 
-      const newProject: { success: boolean; data: ProjectType } =
-        await fetchApi(
-          `/api/protected/project?project_id=${data.data.project_id}`,
-        );
-
-      setProjects((prev) => [...prev, newProject.data]);
+      setProjects((prev) => [...prev, data.data]);
       // setProjectsMap((prev) => {
       //   const newMap = new Map(prev);
       //   newMap.set(data.data.project_id, newProject.data);
@@ -198,11 +193,10 @@ export const ProjectProvider = ({
   };
 
   useEffect(() => {
-    const loadProjects = async () => {
-      await getProjects();
-    };
-    loadProjects();
-  }, [getProjects]);
+    if (authLoading || !user?.user_id) return;
+
+    void getProjects();
+  }, [authLoading, getProjects, user?.user_id]);
 
   return (
     <ProjectContext.Provider

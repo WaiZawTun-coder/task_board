@@ -229,7 +229,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     (async () => {
       try {
-        console.log("refreshing in authContext.tsx 232");
         const token = await refresh();
         if (!alive || !token) return;
 
@@ -251,16 +250,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       alive = false;
     };
   }, [getUser, refresh, router]);
-
-  useEffect(() => {
-    if (!accessToken) {
-      setUser(null);
-    }
-
-    getUser({ newToken: accessToken! }).catch((err) => {
-      console.error("Error fetching user info:", err);
-    });
-  }, [accessToken, getUser]);
 
   return (
     <AuthContext.Provider
