@@ -1,268 +1,187 @@
 import { pool } from "@/lib/db.lib";
 import { headers } from "next/headers";
 
+const projectStatuses = new Set(["active", "archived", "completed"]);
+const slugify = (value: string) =>
+  value.trim().toLowerCase().replace(/\s+/g, "_");
+const getUserId = async () => (await headers()).get("x-user-id");
+
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const user_id = (await headers()).get("x-user-id");
-    const project_id = searchParams.get("task_id");
-
-    if (!project_id) {
+    const userId = await getUserId();
+    const projectId = new URL(request.url).searchParams.get("project_id");
+    if (!userId)
       return Response.json(
-        {
-          success: false,
-          error: "Project id is required",
-        },
+        { success: false, error: "Unauthorized" },
+        { status: 401 },
+      );
+    if (!projectId)
+      return Response.json(
+        { success: false, error: "Project id is required" },
         { status: 400 },
       );
-    }
 
-    const query =
-      "SELECT * FROM projects WHERE project_id = $1 AND user_id = $2";
-    const result = await pool.query(query, [project_id, user_id]);
-
-    return Response.json(
-      {
-        success: true,
-        data: result.rows[0],
-      },
-      { status: 200 },
+    const result = await pool.query(
+      "SELECT * FROM projects WHERE project_id = $1 AND user_id = $2",
+      [projectId, userId],
     );
-  } catch (err: unknown) {
-    console.error("Get project: ", { err });
-    return Response.json({ success: false, err }, { status: 500 });
+    if (result.rowCount === 0)
+      return Response.json(
+        { success: false, error: "Project not found" },
+        { status: 404 },
+      );
+    return Response.json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    console.error("Project get:", error);
+    return Response.json(
+      { success: false, error: "Unable to fetch project" },
+      { status: 500 },
+    );
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-
-    const user_id = (await headers()).get("x-user-id");
-
-    const { title, description, color_hex } = body;
-
-    if (!user_id) {
+    const userId = await getUserId();
+    const { title, description, color_hex: colorHex } = await request.json();
+    if (!userId)
       return Response.json(
-        {
-          success: false,
-          error: "Unauthorized",
-        },
+        { success: false, error: "Unauthorized" },
         { status: 401 },
       );
-    }
-
-    if (!title || title.trim() === "") {
+    if (typeof title !== "string" || !title.trim())
       return Response.json(
-        {
-          success: false,
-          error: "Title cannot be empty",
-        },
+        { success: false, error: "Title cannot be empty" },
         { status: 400 },
       );
-    }
 
-    // create slug
-    const slug = title.replace(" ", "_");
-
-    const baseQuery = "INSERT INTO projects";
-    const columns: string[] = [];
-    const valueIndexs: string[] = [];
-    const queryValues = [];
-    let paramIndex = 1;
-
-    if (user_id) {
-      columns.push("user_id");
-      valueIndexs.push(`$${paramIndex++}`);
-      queryValues.push(user_id);
-    }
-
-    if (title) {
-      columns.push("title");
-      valueIndexs.push(`$${paramIndex++}`);
-      queryValues.push(title);
-    }
-
-    if (slug) {
-      columns.push("slug");
-      valueIndexs.push(`$${paramIndex++}`);
-      queryValues.push(slug);
-    }
-
-    if (description) {
-      columns.push("description");
-      valueIndexs.push(`$${paramIndex++}`);
-      queryValues.push(description);
-    }
-
-    if (color_hex) {
-      columns.push("color_hex");
-      valueIndexs.push(`$${paramIndex++}`);
-      queryValues.push(color_hex);
-    }
-
-    const saveQuery = `${baseQuery} (${columns.join(", ")}) VALUES (${valueIndexs.join(", ")}) RETURNING *`;
-
-    const result = await pool.query(saveQuery, queryValues);
-
-    return Response.json(
-      {
-        success: true,
-        data: result.rows[0],
-      },
-      { status: 200 },
+    const normalizedTitle = title.trim();
+    const result = await pool.query(
+      "INSERT INTO projects (user_id, title, slug, description, color_hex) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+      [
+        userId,
+        normalizedTitle,
+        slugify(normalizedTitle),
+        description || null,
+        colorHex || null,
+      ],
     );
-  } catch (err: unknown) {
-    console.error("Project POST: ", { err });
-    return Response.json({ success: false, err }, { status: 500 });
+    return Response.json(
+      { success: true, data: result.rows[0] },
+      { status: 201 },
+    );
+  } catch (error) {
+    console.error("Project post:", error);
+    return Response.json(
+      { success: false, error: "Unable to create project" },
+      { status: 500 },
+    );
   }
 }
 
 export async function PUT(request: Request) {
   try {
-    const body = await request.json();
-
-    const { project_id, title, slug, description, status, color_hex } = body;
-
-    if (!project_id) {
+    const userId = await getUserId();
+    const {
+      project_id: projectId,
+      title,
+      slug,
+      description,
+      status,
+      color_hex: colorHex,
+    } = await request.json();
+    if (!userId)
       return Response.json(
-        {
-          success: false,
-          error: "Project id is required",
-        },
+        { success: false, error: "Unauthorized" },
+        { status: 401 },
+      );
+    if (!Number.isInteger(projectId) || projectId <= 0)
+      return Response.json(
+        { success: false, error: "Project id is required" },
         { status: 400 },
       );
-    }
-
-    if (title && title.trim() === "") {
+    if (title !== undefined && (typeof title !== "string" || !title.trim()))
       return Response.json(
-        {
-          success: false,
-          error: "Title cannot be empty",
-        },
+        { success: false, error: "Title cannot be empty" },
         { status: 400 },
       );
-    }
-
-    if (
-      status &&
-      (status !== "active" || status !== "archived" || status !== "completed")
-    ) {
+    if (status !== undefined && !projectStatuses.has(status))
       return Response.json(
-        {
-          success: false,
-          error: "Invalid status state",
-        },
+        { success: false, error: "Invalid project status" },
         { status: 400 },
       );
-    }
 
-    const user_id = (await headers()).get("x-user-id");
-
-    const baseQuery = "UPDATE projects SET";
-    const queryParts: string[] = [];
-    const queryValues = [];
-    let paramIndex = 1;
-
-    if (user_id) {
-      queryParts.push(`user_id = $${paramIndex++}`);
-      queryValues.push(user_id);
-    }
-
-    if (title) {
-      queryParts.push(`title = $${paramIndex++}`);
-      queryValues.push(title);
-    }
-
-    if (title && title.trim() !== "" && slug && slug.trim() !== "") {
-      const generatedSlug = title.replace(" ", "_");
-      queryParts.push(`slug = $${paramIndex++}`);
-      queryValues.push(generatedSlug);
-    } else if (slug) {
-      queryParts.push(`slug = $${paramIndex++}`);
-      queryValues.push(slug);
-    }
-
-    if (description && description.trim() != "") {
-      queryParts.push(`description = $${paramIndex++}`);
-      queryValues.push(description);
-    }
-
-    if (status) {
-      queryParts.push(`status = $${paramIndex++}`);
-      queryValues.push(status);
-    }
-
-    if (color_hex) {
-      queryParts.push(`color_hex = $${paramIndex++}`);
-      queryValues.push(color_hex);
-    }
-
-    if (queryParts.length === 0) {
+    const fields: string[] = [];
+    const values: unknown[] = [];
+    const add = (column: string, value: unknown) => {
+      values.push(value);
+      fields.push(`${column} = $${values.length}`);
+    };
+    if (title !== undefined) add("title", title.trim());
+    if (slug !== undefined) add("slug", slug);
+    else if (title !== undefined) add("slug", slugify(title));
+    if (description !== undefined) add("description", description);
+    if (status !== undefined) add("status", status);
+    if (colorHex !== undefined) add("color_hex", colorHex);
+    if (!fields.length)
       return Response.json(
         { success: false, error: "No fields provided to update" },
         { status: 400 },
       );
-    }
 
-    queryParts.push(project_id);
-    const idParamIndex = paramIndex;
-
-    const updateQuery = `${baseQuery} ${queryParts.join(", ")} WHERE project_id = $${idParamIndex}`;
-    await pool.query(updateQuery, queryValues);
-
-    return Response.json(
-      {
-        success: true,
-        message: "Project updated successful",
-      },
-      { status: 200 },
+    values.push(projectId, userId);
+    const result = await pool.query(
+      `UPDATE projects SET ${fields.join(", ")} WHERE project_id = $${values.length - 1} AND user_id = $${values.length} RETURNING *`,
+      values,
     );
-  } catch (err: unknown) {
-    console.error("Project put: ", { err });
-    return Response.json({ success: false, err }, { status: 500 });
+    if (result.rowCount === 0)
+      return Response.json(
+        { success: false, error: "Project not found" },
+        { status: 404 },
+      );
+    return Response.json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    console.error("Project put:", error);
+    return Response.json(
+      { success: false, error: "Unable to update project" },
+      { status: 500 },
+    );
   }
 }
 
 export async function DELETE(request: Request) {
   try {
-    const body = await request.json();
-
-    const { project_id } = body;
-
-    if (!project_id || project_id <= 0) {
-      return Response.json(
-        {
-          success: false,
-          error: "Project id is required",
-        },
-        { status: 400 },
-      );
-    }
-
-    const user_id = (await headers()).get("x-user-id");
-
-    if (!user_id) {
+    const userId = await getUserId();
+    const { project_id: projectId } = await request.json();
+    if (!userId)
       return Response.json(
         { success: false, error: "Unauthorized" },
         { status: 401 },
       );
-    }
+    if (!Number.isInteger(projectId) || projectId <= 0)
+      return Response.json(
+        { success: false, error: "Project id is required" },
+        { status: 400 },
+      );
 
-    const deleteQuery =
-      "DELETE FROM projects WHERE user_id = $1 AND project_id = $2 RETURNING title";
-
-    const resultData = await pool.query(deleteQuery, [user_id, project_id]);
-
-    return Response.json(
-      {
-        success: true,
-        message: resultData.rows[0].title + " has been removed.",
-      },
-      { status: 200 },
+    const result = await pool.query(
+      "DELETE FROM projects WHERE project_id = $1 AND user_id = $2 RETURNING title",
+      [projectId, userId],
     );
-  } catch (err: unknown) {
-    console.error("Project delete: ", { err });
-    return Response.json({ success: false, err }, { status: 500 });
+    if (result.rowCount === 0)
+      return Response.json(
+        { success: false, error: "Project not found" },
+        { status: 404 },
+      );
+    return Response.json({
+      success: true,
+      message: `${result.rows[0].title} has been removed.`,
+    });
+  } catch (error) {
+    console.error("Project delete:", error);
+    return Response.json(
+      { success: false, error: "Unable to delete project" },
+      { status: 500 },
+    );
   }
 }

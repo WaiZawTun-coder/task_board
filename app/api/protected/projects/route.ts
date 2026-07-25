@@ -26,20 +26,19 @@ export async function GET(request: Request) {
     const queryValues = [];
     let paramIndex = 1;
 
-    // title, slug, description, status
+    // Match a search term against any text field, then apply other filters.
     if (searchValue) {
-      // title
-      whereConditions.push(`title ILIKE $${paramIndex++}`);
-      queryValues.push(searchValue);
-
-      // slug
+      const search = `%${searchValue}%`;
+      const titleParam = paramIndex++;
+      queryValues.push(search);
       const slug = searchValue.replace(" ", "_");
-      whereConditions.push(`slug ILIKE $${paramIndex++}`);
-      queryValues.push(slug);
-
-      // description
-      whereConditions.push(`description ILIKE $${paramIndex++} `);
-      queryValues.push(searchValue);
+      const slugParam = paramIndex++;
+      queryValues.push(`%${slug}%`);
+      const descriptionParam = paramIndex++;
+      queryValues.push(search);
+      whereConditions.push(
+        `(title ILIKE $${titleParam} OR slug ILIKE $${slugParam} OR description ILIKE $${descriptionParam})`,
+      );
     }
 
     if (status) {
@@ -47,11 +46,8 @@ export async function GET(request: Request) {
       queryValues.push(status);
     }
 
-    if (whereConditions.length > 0) {
-      baseQuery += ` WHERE ${whereConditions.join(" AND ")} AND `;
-    }
-
-    baseQuery += ` ${whereConditions.length === 0 && "WHERE"} user_id = $${paramIndex++} ORDER BY created_at DESC`;
+    whereConditions.push(`user_id = $${paramIndex++}`);
+    baseQuery += ` WHERE ${whereConditions.join(" AND ")} ORDER BY created_at DESC`;
 
     const result = await pool.query(baseQuery, [...queryValues, user_id]);
 
@@ -63,11 +59,11 @@ export async function GET(request: Request) {
       { status: 200 },
     );
   } catch (err: unknown) {
-    console.error("Projects get: ", { err });
+    console.error("Projects get: ", err);
     return Response.json(
       {
         success: false,
-        err,
+        error: "Unable to fetch projects",
       },
       { status: 500 },
     );

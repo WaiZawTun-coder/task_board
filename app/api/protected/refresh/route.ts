@@ -23,9 +23,15 @@ export async function POST() {
       );
     }
 
-    console.time("Verifying refresh token");
-    const payload = verifyRefreshToken(refreshToken.value);
-    console.timeEnd("Verifying refresh token");
+    let payload;
+    try {
+      payload = verifyRefreshToken(refreshToken.value);
+    } catch {
+      return Response.json(
+        { success: false, error: "Invalid refresh token" },
+        { status: 401 },
+      );
+    }
 
     if (!(payload && typeof payload === "object" && "user_id" in payload)) {
       return Response.json(
@@ -37,16 +43,18 @@ export async function POST() {
       );
     }
 
-    console.time("Invalidating old refresh token");
     await invalidateRefreshToken(refreshToken.value);
-    console.timeEnd("Invalidating old refresh token");
 
     const getUserQuery =
       "SELECT user_id, username, email FROM users WHERE user_id = $1";
 
-    console.time("Fetching user info");
     const result = await pool.query(getUserQuery, [payload.user_id]);
-    console.timeEnd("Fetching user info");
+    if (result.rowCount === 0) {
+      return Response.json(
+        { success: false, error: "User not found" },
+        { status: 401 },
+      );
+    }
 
     const newAccessToken = signToken({
       user_id: payload.user_id,
@@ -66,6 +74,8 @@ export async function POST() {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60,
     });
 
     return Response.json({
@@ -75,11 +85,11 @@ export async function POST() {
       },
     });
   } catch (err: unknown) {
-    console.error("Refresh token: ", { err });
+    console.error("Refresh token: ", err);
     return Response.json(
       {
         success: false,
-        err,
+        error: "Unable to refresh session",
       },
       { status: 500 },
     );

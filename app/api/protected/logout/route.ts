@@ -1,4 +1,4 @@
-import { pool } from "@/lib/db.lib";
+import { invalidateRefreshToken } from "@/lib/jwt.lib";
 import { cookies, headers } from "next/headers";
 
 export async function POST() {
@@ -16,28 +16,10 @@ export async function POST() {
       );
     }
 
-    // check if user exists
-    const query = "SELECT user_id FROM users WHERE user_id = $1";
-    const result = await pool.query(query, [userId]);
-
-    // user does not exist
-    if (result.rowCount === 0) {
-      return Response.json(
-        {
-          success: false,
-          error: "User does not exist",
-        },
-        { status: 404 },
-      );
-    }
-
     // get refresh token from cookies
     const refreshToken = (await cookies()).get("refreshToken");
 
-    // revoke refresh token from db
-    const revokeQuery =
-      "UPDATE refresh_tokens SET revoked = true WHERE user_id = $1 AND token = $2";
-    await pool.query(revokeQuery, [userId, refreshToken?.value]);
+    if (refreshToken?.value) await invalidateRefreshToken(refreshToken.value);
 
     // clear refresh token from cookies
     (await cookies()).delete("refreshToken");
@@ -50,11 +32,11 @@ export async function POST() {
       { status: 200 },
     );
   } catch (err: unknown) {
-    console.error("User logout", { err });
+    console.error("User logout", err);
     return Response.json(
       {
         success: false,
-        err,
+        error: "Unable to log out",
       },
       { status: 500 },
     );

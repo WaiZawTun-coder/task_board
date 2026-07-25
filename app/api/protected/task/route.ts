@@ -1,43 +1,44 @@
 import { pool } from "@/lib/db.lib";
 import { headers } from "next/headers";
 
+const taskStatuses = new Set(["pending", "on_going", "cancel"]);
+const taskPriorities = new Set(["low", "medium", "high"]);
+
+async function getUserId() {
+  return (await headers()).get("x-user-id");
+}
+
 export async function GET(request: Request) {
   try {
-    // get data from request url
-    const { searchParams } = new URL(request.url);
-    const task_id = searchParams.get("task_id");
-    const user_id = (await headers()).get("x-user-id");
+    const userId = await getUserId();
+    const taskId = new URL(request.url).searchParams.get("task_id");
 
-    // valid task_id
-    if (!task_id) {
+    if (!userId)
       return Response.json(
-        {
-          success: false,
-          error: "Missing task id query parameter",
-        },
+        { success: false, error: "Unauthorized" },
+        { status: 401 },
+      );
+    if (!taskId)
+      return Response.json(
+        { success: false, error: "Task id is required" },
         { status: 400 },
       );
-    }
 
-    // get task data from database
-    const query = "SELECT * FROM tasks WHERE task_id = $1 AND user_id = $2";
-    const result = await pool.query(query, [task_id, user_id]);
-
-    // return task data
-    return Response.json(
-      {
-        success: true,
-        data: result.rows[0],
-      },
-      { status: 200 },
+    const result = await pool.query(
+      "SELECT * FROM tasks WHERE task_id = $1 AND user_id = $2",
+      [taskId, userId],
     );
-  } catch (err: unknown) {
-    console.error("Task get: ", { err });
+    if (result.rowCount === 0)
+      return Response.json(
+        { success: false, error: "Task not found" },
+        { status: 404 },
+      );
+
+    return Response.json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    console.error("Task get:", error);
     return Response.json(
-      {
-        success: false,
-        err,
-      },
+      { success: false, error: "Unable to fetch task" },
       { status: 500 },
     );
   }
@@ -45,85 +46,55 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    // Extract data from request body
-    const body = await request.json();
-    const { title, description, due, project_id } = body;
+    const userId = await getUserId();
+    const {
+      title,
+      description,
+      due,
+      project_id: projectId,
+    } = await request.json();
 
-    const user_id = (await headers()).get("x-user-id");
-
-    if (!user_id) {
-      return Response.json({
-        success: false,
-        error: "user_id is required",
-      });
-    }
-
-    if (!title || title.trim() === "") {
+    if (!userId)
       return Response.json(
-        {
-          success: false,
-          error: "Title cannot be empty.",
-        },
+        { success: false, error: "Unauthorized" },
+        { status: 401 },
+      );
+    if (typeof title !== "string" || !title.trim())
+      return Response.json(
+        { success: false, error: "Title cannot be empty" },
         { status: 400 },
       );
+
+    if (projectId) {
+      const project = await pool.query(
+        "SELECT 1 FROM projects WHERE project_id = $1 AND user_id = $2",
+        [projectId, userId],
+      );
+      if (project.rowCount === 0)
+        return Response.json(
+          { success: false, error: "Project not found" },
+          { status: 404 },
+        );
     }
 
-    // Initialize query building arrays
-    const baseQuery = "INSERT INTO tasks";
-    const columns: string[] = [];
-    const valuesIndex: string[] = [];
-    const queryValues = [];
-    let paramIndex = 1;
-
-    // add user_id
-    columns.push("user_id");
-    valuesIndex.push(`$${paramIndex++}`);
-    queryValues.push(user_id);
-
-    // add title
-    columns.push("title");
-    valuesIndex.push(`$${paramIndex++}`);
-    queryValues.push(title);
-
-    // add description if contain
-    if (description) {
-      columns.push(`description`);
-      valuesIndex.push(`$${paramIndex++}`);
-      queryValues.push(description);
-    }
-
-    // add due date if contain
-    if (due) {
-      columns.push(`due`);
-      valuesIndex.push(`$${paramIndex++}`);
-      queryValues.push(due);
-    }
-
-    // add project id if contain
-    if (project_id) {
-      columns.push(`project_id`);
-      valuesIndex.push(`$${paramIndex++}`);
-      queryValues.push(project_id);
-    }
-
-    const saveQuery = `${baseQuery} (${columns.join(", ")}) VALUES (${valuesIndex.join(", ")}) RETURNING *`;
-
-    const result = await pool.query(saveQuery, queryValues);
-
-    return Response.json(
-      {
-        success: true,
-        data: result.rows[0],
-      },
-      { status: 200 },
+    const result = await pool.query(
+      "INSERT INTO tasks (user_id, title, description, due, project_id) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+      [
+        userId,
+        title.trim(),
+        description || null,
+        due || null,
+        projectId || null,
+      ],
     );
-  } catch (err: unknown) {
-    console.error("Task post: ", { err });
     return Response.json(
-      {
-        success: false,
-        err,
-      },
+      { success: true, data: result.rows[0] },
+      { status: 201 },
+    );
+  } catch (error) {
+    console.error("Task post:", error);
+    return Response.json(
+      { success: false, error: "Unable to create task" },
       { status: 500 },
     );
   }
@@ -131,91 +102,75 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
-    // Extract data from reuqest body
-    const body = await request.json();
-    const { task_id, title, description, due, status, priority, user_id } =
-      body;
+    const userId = await getUserId();
+    const {
+      task_id: taskId,
+      title,
+      description,
+      due,
+      status,
+      priority,
+    } = await request.json();
 
-    const errors = [];
-
-    if (!task_id || task_id <= 0) errors[errors.length] = "task_id";
-
-    if (!title || title.trim() === "") errors[errors.length] = "title";
-
-    if (!user_id || user_id <= 0) errors[errors.length] = "user_id";
-
-    if (errors.length > 0) {
-      const errorMessage = `${errors.join(", ")} ${errors.length === 1 ? "is" : "are"} required`;
+    if (!userId)
       return Response.json(
-        {
-          success: false,
-          error: errorMessage,
-        },
+        { success: false, error: "Unauthorized" },
+        { status: 401 },
+      );
+    if (!Number.isInteger(taskId) || taskId <= 0)
+      return Response.json(
+        { success: false, error: "Task id is required" },
         { status: 400 },
       );
-    }
+    if (title !== undefined && (typeof title !== "string" || !title.trim()))
+      return Response.json(
+        { success: false, error: "Title cannot be empty" },
+        { status: 400 },
+      );
+    if (status !== undefined && !taskStatuses.has(status))
+      return Response.json(
+        { success: false, error: "Invalid task status" },
+        { status: 400 },
+      );
+    if (priority !== undefined && !taskPriorities.has(priority))
+      return Response.json(
+        { success: false, error: "Invalid task priority" },
+        { status: 400 },
+      );
 
-    // Initialize arrays to hold query parts and values
-    const queryParts: string[] = [];
-    const queryValues = [];
-    let paramIndex = 1;
-
-    // Conditionally push fields if they are provided in the request
-    if (user_id !== undefined) {
-      queryParts.push(`user_id = $${paramIndex++}`);
-      queryValues.push(title);
-    }
-    if (title !== undefined) {
-      queryParts.push(`title = $${paramIndex++}`);
-      queryValues.push(title);
-    }
-    if (description !== undefined) {
-      queryParts.push(`description = $${paramIndex++}`);
-      queryValues.push(description);
-    }
-    if (due !== undefined) {
-      queryParts.push(`due = $${paramIndex++}`);
-      queryValues.push(due);
-    }
-    if (status !== undefined) {
-      queryParts.push(`status = $${paramIndex++}`);
-      queryValues.push(status);
-    }
-    if (priority !== undefined) {
-      queryParts.push(`priority = $${paramIndex++}`);
-      queryValues.push(priority);
-    }
-
-    // Guard clause if someone sends a request with nothing to update
-    if (queryParts.length === 0) {
+    const fields: string[] = [];
+    const values: unknown[] = [];
+    const add = (column: string, value: unknown) => {
+      values.push(value);
+      fields.push(`${column} = $${values.length}`);
+    };
+    if (title !== undefined) add("title", title.trim());
+    if (description !== undefined) add("description", description);
+    if (due !== undefined) add("due", due);
+    if (status !== undefined) add("status", status);
+    if (priority !== undefined) add("priority", priority);
+    if (!fields.length)
       return Response.json(
         { success: false, error: "No fields provided to update" },
         { status: 400 },
       );
-    }
 
-    // Add the task_id as the final parameter for the WHERE clause
-    queryValues.push(task_id);
-    const idParamIndex = paramIndex;
-
-    // Combine everything into the final SQL string
-    const updateQuery = `UPDATE tasks SET ${queryParts.join(", ")} WHERE task_id = $${idParamIndex}`;
-    await pool.query(updateQuery, queryValues);
-
-    return Response.json(
-      {
-        success: true,
-        message: "Task updated successful",
-      },
-      { status: 200 },
+    values.push(taskId, userId);
+    const result = await pool.query(
+      `UPDATE tasks SET ${fields.join(", ")} WHERE task_id = $${values.length - 1} AND user_id = $${values.length} RETURNING *`,
+      values,
     );
-  } catch (err: unknown) {
-    console.error("Task put: ", { err });
+    if (result.rowCount === 0)
+      return Response.json(
+        { success: false, error: "Task not found" },
+        { status: 404 },
+      );
+
+    return Response.json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    console.error("Task put:", error);
     return Response.json(
-      {
-        success: false,
-        err,
-      },
+      { success: false, error: "Unable to update task" },
       { status: 500 },
     );
   }
@@ -223,50 +178,38 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const body = await request.json();
+    const userId = await getUserId();
+    const { task_id: taskId } = await request.json();
 
-    const { user_id, task_id } = body;
-
-    // validate user_id
-    if (!user_id) {
+    if (!userId)
       return Response.json(
-        {
-          success: false,
-          error: "user_id is required",
-        },
+        { success: false, error: "Unauthorized" },
+        { status: 401 },
+      );
+    if (!Number.isInteger(taskId) || taskId <= 0)
+      return Response.json(
+        { success: false, error: "Task id is required" },
         { status: 400 },
       );
-    }
 
-    // validate task_id
-    if (!task_id) {
-      return Response.json(
-        {
-          success: false,
-          error: "task_id is required",
-        },
-        { status: 400 },
-      );
-    }
-
-    const deleteQuery =
-      "DELETE FROM tasks WHERE user_id = $1 AND task_id = $2 RETURNING title";
-    const resultData = await pool.query(deleteQuery, [user_id, task_id]);
-
-    return Response.json(
-      {
-        success: true,
-        message: resultData.rows[0].title + " has been removed.",
-      },
-      { status: 200 },
+    const result = await pool.query(
+      "DELETE FROM tasks WHERE task_id = $1 AND user_id = $2 RETURNING title",
+      [taskId, userId],
     );
-  } catch (err: unknown) {
-    console.error("Task delete: ", { err });
+    if (result.rowCount === 0)
+      return Response.json(
+        { success: false, error: "Task not found" },
+        { status: 404 },
+      );
+
+    return Response.json({
+      success: true,
+      message: `${result.rows[0].title} has been removed.`,
+    });
+  } catch (error) {
+    console.error("Task delete:", error);
     return Response.json(
-      {
-        success: false,
-        err,
-      },
+      { success: false, error: "Unable to delete task" },
       { status: 500 },
     );
   }

@@ -23,7 +23,6 @@ export async function GET(request: Request) {
     const description = searchParams.get("description");
     const due = searchParams.get("due");
 
-    // Initialize query building arrays
     let baseQuery = "SELECT * FROM tasks";
     const whereConditions: string[] = [];
     const queryValues = [];
@@ -50,14 +49,8 @@ export async function GET(request: Request) {
       queryValues.push(`%${description}%`);
     }
 
-    // Combine conditions into the final query string
-    if (whereConditions.length > 0) {
-      baseQuery += ` WHERE ${whereConditions.join(" AND ")} AND `;
-    }
-
-    // Add sorting to keep results organized
-    baseQuery += ` ${whereConditions.length === 0 && "WHERE"} user_id = $${paramIndex++} ORDER BY created_at DESC`;
-    // Execute your query here using your database client
+    whereConditions.push(`user_id = $${paramIndex++}`);
+    baseQuery += ` WHERE ${whereConditions.join(" AND ")} ORDER BY created_at DESC`;
     const result = await pool.query(baseQuery, [...queryValues, user_id]);
 
     return Response.json(
@@ -68,11 +61,11 @@ export async function GET(request: Request) {
       { status: 200 },
     );
   } catch (err: unknown) {
-    console.error("Tasks get: ", { err });
+    console.error("Tasks get: ", err);
     return Response.json(
       {
         success: false,
-        error: err instanceof Error ? err.message : err,
+        error: "Unable to fetch tasks",
       },
       { status: 500 },
     );
