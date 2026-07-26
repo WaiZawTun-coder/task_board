@@ -50,13 +50,7 @@ export default function RootLayout({
     >
       <body className="min-h-screen flex flex-col">
         <AuthProvider>
-          <ProjectProvider>
-            <TaskProvider>
-              <NotificationProvider>
-                <ThemeProvider>{children}</ThemeProvider>
-              </NotificationProvider>
-            </TaskProvider>
-          </ProjectProvider>
+          <ThemeProvider>{children}</ThemeProvider>
         </AuthProvider>
       </body>
     </html>

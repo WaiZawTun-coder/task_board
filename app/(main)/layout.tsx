@@ -3,6 +3,9 @@
 import DashboardHeader from "@/components/dashboard/dashboard-header";
 import Sidebar from "@/components/sidebar";
 import { useAuth } from "@/context/AuthContext";
+import { NotificationProvider } from "@/context/NotificationContext";
+import { ProjectProvider } from "@/context/ProjectContext";
+import { TaskProvider } from "@/context/TaskContext";
 import { useRouter } from "next/navigation";
 
 export default function MainLayout({
@@ -11,7 +14,6 @@ export default function MainLayout({
   children: React.ReactNode;
 }>) {
   const { authLoading, user } = useAuth();
-  const router = useRouter();
 
   if (authLoading && !user) {
     return (
@@ -21,19 +23,21 @@ export default function MainLayout({
     );
   }
 
-  if (!authLoading && !user) {
-    // router.push("login");
-  }
-
   return (
-    <div className="flex min-h-screen flex-col">
-      <DashboardHeader />
-      <div className="flex flex-1 min-h-0">
-        <Sidebar />
-        <div className="mx-auto flex-2 max-w-7xl overflow-y-auto">
-          {children}
-        </div>
-      </div>
-    </div>
+    <ProjectProvider>
+      <TaskProvider>
+        <NotificationProvider>
+          <div className="flex min-h-screen flex-col">
+            <DashboardHeader />
+            <div className="flex flex-1 min-h-0">
+              <Sidebar />
+              <div className="mx-auto flex-2 max-w-7xl overflow-y-auto">
+                {children}
+              </div>
+            </div>
+          </div>
+        </NotificationProvider>
+      </TaskProvider>
+    </ProjectProvider>
   );
 }

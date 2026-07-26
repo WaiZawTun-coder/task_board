@@ -11,7 +11,7 @@ const NavBar = () => {
 
   const handleGetStarted = () => {
     if (isAuthenticated) {
-      router.push("/home");
+      router.push("/dashboard");
     } else {
       router.push("/login");
     }

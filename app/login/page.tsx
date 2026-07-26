@@ -62,7 +62,7 @@ const Login = () => {
     try {
       await login(formData);
 
-      router.push("/home");
+      router.push("/dashboard");
     } catch (err: unknown) {
       setError((prev) => ({
         ...prev,
@@ -76,7 +76,7 @@ const Login = () => {
   // check if authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      router.push("/home");
+      router.push("/dashboard");
     }
   }, [isAuthenticated, router]);
 

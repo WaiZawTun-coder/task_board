@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { ListChecks } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ChevronLeft, ChevronRight, ListChecks } from "lucide-react";
 
 import NewTask from "@/components/newTask";
+import { Button } from "@/components/UI/button";
 import { EditTaskDialog } from "@/components/tasks/edit-task-dialog";
 import {
   TaskFilters,
@@ -13,32 +14,23 @@ import {
 import { TaskList } from "@/components/tasks/task-list";
 import { useProject } from "@/context/ProjectContext";
 import { useTask } from "@/context/TaskContext";
+import { useTasksQuery } from "@/hooks/useTasksQuery";
 import TaskType from "@/lib/types/task";
 
-const getDueTime = (task: TaskType) => {
-  if (!task.due) return null;
-  const date = new Date(task.due);
-  return Number.isNaN(date.getTime()) ? null : date.getTime();
-};
-
-const priorityWeight: Record<TaskType["priority"], number> = {
-  high: 3,
-  medium: 2,
-  low: 1,
-};
-
-const taskProjectId = (task: TaskType) =>
-  task.projectId ?? (task as TaskType & { project_id?: number }).project_id;
+const PAGE_SIZE = 10;
 
 export default function AllTasksPage() {
-  const { tasks, createTask, updateTask, deleteTask } = useTask();
+  const { createTask, updateTask, deleteTask } = useTask();
   const { projects } = useProject();
+  const { tasks, pagination, isLoading, fetchTasks } = useTasksQuery();
 
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [status, setStatus] = useState<StatusFilter>("all");
   const [priorities, setPriorities] = useState<TaskType["priority"][]>([]);
   const [projectId, setProjectId] = useState<number | undefined>(undefined);
   const [sort, setSort] = useState<SortOption>("due_asc");
+  const [page, setPage] = useState(1);
   const [editingTask, setEditingTask] = useState<TaskType | null>(null);
 
   const hasActiveFilters =
@@ -54,51 +46,32 @@ export default function AllTasksPage() {
     setProjectId(undefined);
   };
 
-  const filteredTasks = useMemo(() => {
-    const term = search.trim().toLowerCase();
+  // debounce the raw search input so we don't hit the API on every keystroke
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedSearch(search.trim()), 400);
+    return () => clearTimeout(id);
+  }, [search]);
 
-    const filtered = tasks.filter((task) => {
-      if (status !== "all" && task.status !== status) return false;
-      if (priorities.length > 0 && !priorities.includes(task.priority))
-        return false;
-      if (projectId !== undefined && taskProjectId(task) !== projectId)
-        return false;
-      if (
-        term &&
-        !task.title.toLowerCase().includes(term) &&
-        !task.description?.toLowerCase().includes(term)
-      )
-        return false;
-      return true;
+  // any filter change should jump back to page 1
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, status, priorities, projectId, sort]);
+
+  const runQuery = () =>
+    fetchTasks({
+      search: debouncedSearch,
+      status,
+      priorities,
+      project_id: projectId,
+      sort,
+      page,
+      limit: PAGE_SIZE,
     });
 
-    return [...filtered].sort((a, b) => {
-      switch (sort) {
-        case "due_asc": {
-          const aDue = getDueTime(a);
-          const bDue = getDueTime(b);
-          if (aDue === null && bDue === null) return 0;
-          if (aDue === null) return 1;
-          if (bDue === null) return -1;
-          return aDue - bDue;
-        }
-        case "due_desc": {
-          const aDue = getDueTime(a);
-          const bDue = getDueTime(b);
-          if (aDue === null && bDue === null) return 0;
-          if (aDue === null) return 1;
-          if (bDue === null) return -1;
-          return bDue - aDue;
-        }
-        case "priority_desc":
-          return priorityWeight[b.priority] - priorityWeight[a.priority];
-        case "title_asc":
-          return a.title.localeCompare(b.title);
-        default:
-          return 0;
-      }
-    });
-  }, [tasks, search, status, priorities, projectId, sort]);
+  useEffect(() => {
+    void runQuery();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch, status, priorities, projectId, sort, page]);
 
   const handleStatusChange = async (
     task: TaskType,
@@ -114,6 +87,7 @@ export default function AllTasksPage() {
         status: newStatus,
         priority: task.priority,
       });
+      await runQuery();
     } catch (err) {
       console.error("Failed to update task status", err);
     }
@@ -122,9 +96,22 @@ export default function AllTasksPage() {
   const handleDelete = async (task: TaskType) => {
     try {
       await deleteTask({ task_id: task.task_id });
+      await runQuery();
     } catch (err) {
       console.error("Failed to delete task", err);
     }
+  };
+
+  const handleCreate = async (data: Parameters<typeof createTask>[0]) => {
+    const result = await createTask(data);
+    if (result.success) await runQuery();
+    return result;
+  };
+
+  const handleSave = async (data: Parameters<typeof updateTask>[0]) => {
+    const result = await updateTask(data);
+    if (result.success) await runQuery();
+    return result;
   };
 
   return (
@@ -136,11 +123,12 @@ export default function AllTasksPage() {
             All Tasks
           </h1>
           <p className="text-sm text-muted-foreground">
-            {filteredTasks.length} of {tasks.length} task
-            {tasks.length === 1 ? "" : "s"} shown
+            {isLoading
+              ? "Loading tasks…"
+              : `${pagination.total} task${pagination.total === 1 ? "" : "s"} found`}
           </p>
         </div>
-        <NewTask onCreate={createTask} />
+        <NewTask onCreate={handleCreate} />
       </div>
 
       <TaskFilters
@@ -160,18 +148,48 @@ export default function AllTasksPage() {
       />
 
       <TaskList
-        tasks={filteredTasks}
+        tasks={tasks}
         projects={projects}
         onStatusChange={handleStatusChange}
         onEdit={setEditingTask}
         onDelete={handleDelete}
       />
 
+      {pagination.totalPages > 1 && (
+        <div className="flex items-center justify-between border-t pt-4">
+          <p className="text-sm text-muted-foreground">
+            Page {pagination.page} of {pagination.totalPages}
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page <= 1 || isLoading}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page >= pagination.totalPages || isLoading}
+              onClick={() =>
+                setPage((p) => Math.min(pagination.totalPages, p + 1))
+              }
+            >
+              Next
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+
       <EditTaskDialog
         task={editingTask}
         open={editingTask !== null}
         onOpenChange={(open) => !open && setEditingTask(null)}
-        onSave={updateTask}
+        onSave={handleSave}
       />
     </div>
   );

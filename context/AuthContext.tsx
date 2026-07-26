@@ -1,7 +1,7 @@
 "use client";
 
 import { getBackendUrl } from "@/utilities/url";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import React, {
   createContext,
   useCallback,
@@ -51,6 +51,7 @@ export const useAuth = () => useContext(AuthContext) as AuthContextType;
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
+  const pathname = usePathname();
 
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [user, setUser] = useState<AuthContextType["user"] | null>(null);
@@ -91,34 +92,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     [],
   );
 
-  const getUser = useCallback(
-    async ({ newToken }: { newToken: string }) => {
-      const res = await fetch(getBackendUrl() + "/api/protected/user", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${newToken}`,
-        },
-        credentials: "include",
-      });
+  const getUser = useCallback(async ({ newToken }: { newToken: string }) => {
+    const res = await fetch(getBackendUrl() + "/api/protected/user", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${newToken}`,
+      },
+      credentials: "include",
+    });
 
-      const data = await res.json();
+    const data = await res.json();
 
-      if (!res.ok)
-        throw new Error(
-          data.message || data.error || "Unable to fetch user info",
-        );
+    if (!res.ok)
+      throw new Error(
+        data.message || data.error || "Unable to fetch user info",
+      );
 
-      if (!data.success) {
-        throw new Error(
-          data.message || data.error || "Unable to fetch user info",
-        );
-      }
+    if (!data.success) {
+      throw new Error(
+        data.message || data.error || "Unable to fetch user info",
+      );
+    }
 
-      setUser(data.data);
-    },
-    [],
-  );
+    setUser(data.data);
+  }, []);
 
   const logout = useCallback(async () => {
     const res = await fetch(getBackendUrl() + "/api/protected/logout", {
@@ -195,10 +193,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       const data = await res.json();
       if (!res.ok)
-        throw new Error(data.message || data.error || "Unable to validate user");
+        throw new Error(
+          data.message || data.error || "Unable to validate user",
+        );
 
       if (!data.success)
-        throw new Error(data.message || data.error || "Unable to validate user");
+        throw new Error(
+          data.message || data.error || "Unable to validate user",
+        );
 
       setAccessToken(data.data.token);
       return data.data.token;
@@ -233,7 +235,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (!alive) return;
         setAccessToken(null);
         setUser(null);
-        router.replace("/login");
+
+        console.log("pathname: ", pathname);
+        if (pathname !== "/") router.replace("/login");
       } finally {
         if (alive) setAuthLoading(false);
       }
@@ -242,7 +246,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => {
       alive = false;
     };
-  }, [getUser, refresh, router]);
+  }, [getUser, refresh, router, pathname]);
 
   return (
     <AuthContext.Provider
