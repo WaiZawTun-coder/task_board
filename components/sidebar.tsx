@@ -1,33 +1,33 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard,
-  CalendarDays,
   Calendar,
+  CalendarDays,
   ChartColumn,
   ChevronDown,
   ChevronsLeft,
   ChevronsRight,
-  Menu,
   FolderKanban,
-  Plus,
+  LayoutDashboard,
+  ListChecks,
+  Menu,
 } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/UI/button";
 import { Badge } from "@/components/UI/badge";
+import { Button } from "@/components/UI/button";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
 } from "@/components/UI/sheet";
-import NewProject from "./newProject";
 import { useProject } from "@/context/ProjectContext";
 import ProjectType from "@/lib/types/project";
+import { cn } from "@/lib/utils";
+import NewProject from "./newProject";
 
 type NavChild = {
   href: string;
@@ -42,16 +42,11 @@ type NavItem = {
   children?: NavChild[];
 };
 
-type Project = {
-  id: string;
-  name: string;
-  color: string; // used for the little dot next to the project name
-};
-
 // Wire `badge` up to real data (e.g. unread counts) and `children` to
 // real sub-routes as your app grows.
 const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/tasks", label: "All Tasks", icon: ListChecks },
   { href: "/today", label: "Today", icon: CalendarDays, badge: 3 },
   { href: "/calendar", label: "Calendar", icon: Calendar },
   {
@@ -352,13 +347,9 @@ const Sidebar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [hydrated, setHydrated] = useState(false);
-  const [projectsLoading, setProjectsLoading] = useState(true);
+  // const [projectsLoading, setProjectsLoading] = useState(true);
 
   const { projects, createProject, isProjectsLoading } = useProject();
-
-  useEffect(() => {
-    console.log("Projects", projects);
-  }, [projects]);
 
   // Restore collapsed preference (client-only to avoid hydration mismatch).
   useEffect(() => {
