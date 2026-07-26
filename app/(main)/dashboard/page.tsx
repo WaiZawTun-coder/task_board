@@ -23,12 +23,34 @@ import TaskType from "@/lib/types/task";
 
 import { TaskColumn } from "@/components/task-column";
 import { DragDropProvider, DragEndEvent, DragOverlay } from "@dnd-kit/react";
+import { useCallback, useEffect, useState } from "react";
+import { useApi } from "@/utilities/api";
 
 type Stat = {
   label: string;
   value: number;
   icon: typeof ListTodo;
   accent: string;
+};
+
+type TaskStatus = TaskType["status"];
+
+type DashboardData = {
+  columns: Record<TaskStatus, TaskType[]>;
+  counts: Record<TaskStatus, number>;
+  stats: { total: number; overdue: number };
+  upcoming: TaskType[];
+  recent: TaskType[];
+  projectCounts: Record<string, number>;
+};
+
+const EMPTY_DASHBOARD: DashboardData = {
+  columns: { pending: [], on_going: [], cancel: [] },
+  counts: { pending: 0, on_going: 0, cancel: 0 },
+  stats: { total: 0, overdue: 0 },
+  upcoming: [],
+  recent: [],
+  projectCounts: {},
 };
 
 const statusLabels = {
@@ -75,26 +97,36 @@ function StatCard({ label, value, icon: Icon, accent }: Stat) {
 }
 
 export default function Dashboard() {
-  const { tasks, createTask, updateTask } = useTask();
+  const { createTask, updateTask } = useTask();
   const { projects, isProjectsLoading } = useProject();
+  const fetchApi = useApi();
+  const [dashboard, setDashboard] = useState<DashboardData>(EMPTY_DASHBOARD);
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const loadDashboard = useCallback(async () => {
+    try {
+      const response = await fetchApi<{ success: boolean; data: DashboardData }>(
+        "/api/protected/dashboard",
+      );
 
-  const pendingTasks = tasks.filter((task) => task.status === "pending");
-  const inProgressTasks = tasks.filter((task) => task.status === "on_going");
-  const cancelledTasks = tasks.filter((task) => task.status === "cancel");
-  const overdueTasks = tasks.filter((task) => {
-    const due = getDueDate(task);
-    return due !== null && due < today && task.status !== "cancel";
-  });
-  const upcomingTasks = tasks
-    .filter((task) => {
-      const due = getDueDate(task);
-      return due !== null && due >= today && task.status !== "cancel";
-    })
-    .sort((a, b) => getDueDate(a)!.getTime() - getDueDate(b)!.getTime())
-    .slice(0, 4);
+      if (response.success) setDashboard(response.data);
+    } catch (error) {
+      console.error("Failed to load dashboard", error);
+    }
+  }, [fetchApi]);
+
+  useEffect(() => {
+    const initialLoad = window.setTimeout(() => void loadDashboard(), 0);
+    window.addEventListener("taskboard:tasks-changed", loadDashboard);
+    return () => {
+      window.clearTimeout(initialLoad);
+      window.removeEventListener("taskboard:tasks-changed", loadDashboard);
+    };
+  }, [loadDashboard]);
+
+  const pendingTasks = dashboard.columns.pending;
+  const inProgressTasks = dashboard.columns.on_going;
+  const cancelledTasks = dashboard.columns.cancel;
+  const upcomingTasks = dashboard.upcoming;
 
   const handleDragEnd = async (event: DragEndEvent) => {
     if (event.canceled) return;
@@ -123,28 +155,28 @@ export default function Dashboard() {
   const stats: Stat[] = [
     {
       label: "Total Tasks",
-      value: tasks.length,
+      value: dashboard.stats.total,
       icon: ListTodo,
       accent:
         "text-blue-600 bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400",
     },
     {
       label: "To Do",
-      value: pendingTasks.length,
+      value: dashboard.counts.pending,
       icon: CheckCircle2,
       accent:
         "text-green-600 bg-green-100 dark:bg-green-900/30 dark:text-green-400",
     },
     {
       label: "In Progress",
-      value: inProgressTasks.length,
+      value: dashboard.counts.on_going,
       icon: Clock,
       accent:
         "text-yellow-600 bg-yellow-100 dark:bg-yellow-900/30 dark:text-yellow-400",
     },
     {
       label: "Overdue",
-      value: overdueTasks.length,
+      value: dashboard.stats.overdue,
       icon: AlertTriangle,
       accent: "text-red-600 bg-red-100 dark:bg-red-900/30 dark:text-red-400",
     },
@@ -182,18 +214,21 @@ export default function Dashboard() {
                   title={statusLabels.pending}
                   dotClass="bg-gray-400"
                   tasks={pendingTasks}
+                  totalCount={dashboard.counts.pending}
                 />
                 <TaskColumn
                   status="on_going"
                   title={statusLabels.on_going}
                   dotClass="bg-blue-500"
                   tasks={inProgressTasks}
+                  totalCount={dashboard.counts.on_going}
                 />
                 <TaskColumn
                   status="cancel"
                   title={statusLabels.cancel}
                   dotClass="bg-red-500"
                   tasks={cancelledTasks}
+                  totalCount={dashboard.counts.cancel}
                 />
               </div>
               <DragOverlay>
@@ -265,9 +300,8 @@ export default function Dashboard() {
           <CardContent className="space-y-4">
             {projects.length ? (
               projects.slice(0, 5).map((project) => {
-                const projectTasks = tasks.filter(
-                  (task) => taskProjectId(task) === project.project_id,
-                );
+                const projectTaskCount =
+                  dashboard.projectCounts[String(project.project_id)] ?? 0;
                 return (
                   <div key={project.project_id}>
                     <div className="mb-1.5 flex items-center justify-between text-sm">
@@ -281,15 +315,15 @@ export default function Dashboard() {
                         </span>
                       </div>
                       <span className="shrink-0 text-muted-foreground">
-                        {projectTasks.length} task
-                        {projectTasks.length === 1 ? "" : "s"}
+                        {projectTaskCount} task
+                        {projectTaskCount === 1 ? "" : "s"}
                       </span>
                     </div>
                     <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                       <div
                         className="h-full rounded-full"
                         style={{
-                          width: `${tasks.length ? Math.round((projectTasks.length / tasks.length) * 100) : 0}%`,
+                          width: `${dashboard.stats.total ? Math.round((projectTaskCount / dashboard.stats.total) * 100) : 0}%`,
                           backgroundColor: project.color_hex,
                         }}
                       />
@@ -309,8 +343,8 @@ export default function Dashboard() {
             <CardDescription>Latest tasks in your workspace</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {tasks.length ? (
-              tasks.slice(0, 4).map((task) => {
+            {dashboard.recent.length ? (
+              dashboard.recent.map((task) => {
                 const project = projects.find(
                   (item) => item.project_id === taskProjectId(task),
                 );

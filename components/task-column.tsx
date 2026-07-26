@@ -6,20 +6,27 @@ import { cn } from "@/lib/utils";
 import TaskType from "@/lib/types/task";
 import { TaskCard } from "./task-card";
 
+const MAX_VISIBLE_TASKS = 5;
+
 export function TaskColumn({
   title,
   dotClass,
   status,
   tasks,
+  totalCount = tasks.length,
 }: {
   title: string;
   dotClass: string;
   status: TaskType["status"];
   tasks: TaskType[];
+  totalCount?: number;
 }) {
   const { ref, isDropTarget } = useDroppable({
     id: status,
   });
+
+  const visibleTasks = tasks.slice(0, MAX_VISIBLE_TASKS);
+  const hiddenCount = Math.max(0, totalCount - visibleTasks.length);
 
   return (
     <div
@@ -34,14 +41,21 @@ export function TaskColumn({
           <span className={`h-2.5 w-2.5 rounded-full ${dotClass}`} />
           <h3 className="text-sm font-medium">{title}</h3>
         </div>
-        <Badge variant="outline">{tasks.length}</Badge>
+        <Badge variant="outline">{totalCount}</Badge>
       </div>
       <div className="max-h-80 space-y-2 overflow-y-auto px-1 pb-1">
-        {tasks.length ? (
-          tasks.map((task) => <TaskCard key={task.task_id} task={task} />)
+        {visibleTasks.length ? (
+          visibleTasks.map((task) => (
+            <TaskCard key={task.task_id} task={task} />
+          ))
         ) : (
           <p className="rounded-lg border border-dashed p-3 text-xs text-muted-foreground">
             {isDropTarget ? "Drop here" : "No tasks"}
+          </p>
+        )}
+        {hiddenCount > 0 && (
+          <p className="px-1 text-xs text-muted-foreground">
+            +{hiddenCount} more
           </p>
         )}
       </div>

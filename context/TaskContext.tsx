@@ -10,6 +10,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { usePathname } from "next/navigation";
 import { useAuth } from "./AuthContext";
 
 type TaskContextType = {
@@ -56,6 +57,7 @@ export const useTask = () => useContext(TaskContext) as TaskContextType;
 
 export const TaskProvider = ({ children }: { children: React.ReactNode }) => {
   const [tasks, setTasks] = useState<TaskType[]>([]);
+  const pathname = usePathname();
   const { user, authLoading } = useAuth();
   const taskLoading = useRef<boolean>(false);
 
@@ -119,6 +121,7 @@ export const TaskProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       setTasks((prev) => [...prev, data.data]);
+      window.dispatchEvent(new Event("taskboard:tasks-changed"));
 
       return data;
       // return { success: true, message: "Update this" };
@@ -148,15 +151,15 @@ export const TaskProvider = ({ children }: { children: React.ReactNode }) => {
     const prevTasks = tasks;
     const prevTask = tasks.find((task) => task.task_id === task_id);
 
-    if (!prevTask) return { success: false };
-
-    setTasks((prev) =>
-      prev.map((t) =>
-        t.task_id === task_id
-          ? { ...t, title, description, due, status, priority }
-          : t,
-      ),
-    );
+    if (prevTask) {
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.task_id === task_id
+            ? { ...t, title, description, due, status, priority }
+            : t,
+        ),
+      );
+    }
 
     try {
       const body = {
@@ -175,13 +178,14 @@ export const TaskProvider = ({ children }: { children: React.ReactNode }) => {
       });
 
       if (!data.success) {
-        setTasks(prevTasks);
+        if (prevTask) setTasks(prevTasks);
         return data;
       }
 
+      window.dispatchEvent(new Event("taskboard:tasks-changed"));
       return data;
     } catch (err: unknown) {
-      setTasks(prevTasks);
+      if (prevTask) setTasks(prevTasks);
       throw err;
     }
   };
@@ -209,6 +213,7 @@ export const TaskProvider = ({ children }: { children: React.ReactNode }) => {
         return data;
       }
 
+      window.dispatchEvent(new Event("taskboard:tasks-changed"));
       return data;
     } catch (err: unknown) {
       setTasks(previousTasks);
@@ -217,6 +222,9 @@ export const TaskProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   useEffect(() => {
+    // The dashboard has its own compact query. Avoid loading every task just
+    // because the shared provider is mounted in the main layout.
+    if (pathname === "/dashboard") return;
     if (authLoading || !user?.user_id || isInitialized.current) return;
 
     isInitialized.current = true;
@@ -226,7 +234,7 @@ export const TaskProvider = ({ children }: { children: React.ReactNode }) => {
     }, 0);
 
     return () => clearTimeout(id);
-  }, [authLoading, user?.user_id, loadTasks]);
+  }, [authLoading, user?.user_id, loadTasks, pathname]);
 
   return (
     <TaskContext.Provider value={{ tasks, createTask, updateTask, deleteTask }}>
