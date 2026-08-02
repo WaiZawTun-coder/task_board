@@ -138,8 +138,47 @@ export default function Dashboard() {
     const task = (source?.data as { task?: TaskType } | undefined)?.task;
     if (!task || task.status === newStatus) return;
 
+    const previousDashboard = dashboard;
+
+    setDashboard((current) => {
+      const previousStatus = task.status;
+      const updatedTask = { ...task, status: newStatus };
+      const sourceTasks = current.columns[previousStatus].filter(
+        (item) => item.task_id !== task.task_id,
+      );
+      const targetTasks = [
+        updatedTask,
+        ...current.columns[newStatus].filter(
+          (item) => item.task_id !== task.task_id,
+        ),
+      ].slice(0, 5);
+
+      return {
+        ...current,
+        columns: {
+          ...current.columns,
+          [previousStatus]: sourceTasks,
+          [newStatus]: targetTasks,
+        },
+        counts: {
+          ...current.counts,
+          [previousStatus]: Math.max(0, current.counts[previousStatus] - 1),
+          [newStatus]: current.counts[newStatus] + 1,
+        },
+        upcoming:
+          newStatus === "cancel"
+            ? current.upcoming.filter((item) => item.task_id !== task.task_id)
+            : current.upcoming.map((item) =>
+                item.task_id === task.task_id ? updatedTask : item,
+              ),
+        recent: current.recent.map((item) =>
+          item.task_id === task.task_id ? updatedTask : item,
+        ),
+      };
+    });
+
     try {
-      await updateTask({
+      const result = await updateTask({
         task_id: task.task_id,
         title: task.title,
         description: task.description,
@@ -147,7 +186,10 @@ export default function Dashboard() {
         status: newStatus,
         priority: task.priority,
       });
+
+      if (!result.success) setDashboard(previousDashboard);
     } catch (err) {
+      setDashboard(previousDashboard);
       console.error("Failed to update task status", err);
     }
   };

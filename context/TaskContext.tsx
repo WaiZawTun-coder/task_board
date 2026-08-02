@@ -145,8 +145,7 @@ export const TaskProvider = ({ children }: { children: React.ReactNode }) => {
     status: "pending" | "on_going" | "cancel";
     priority: "low" | "medium" | "high";
   }): Promise<{ success: boolean }> => {
-    if (authLoading || !user?.user_id || !isInitialized.current)
-      return { success: false };
+    if (authLoading || !user?.user_id) return { success: false };
 
     const prevTasks = tasks;
     const prevTask = tasks.find((task) => task.task_id === task_id);
