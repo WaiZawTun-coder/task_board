@@ -33,7 +33,7 @@ const SORT_LABELS: Record<SortOption, string> = {
   due_asc: "Due date (soonest)",
   due_desc: "Due date (latest)",
   priority_desc: "Priority (high to low)",
-  title_asc: "Title (A–Z)",
+  title_asc: "Title (A-Z)",
 };
 
 type TaskFiltersProps = {
@@ -99,6 +99,7 @@ export function TaskFilters({
           <TabsTrigger value="pending">To Do</TabsTrigger>
           <TabsTrigger value="on_going">In Progress</TabsTrigger>
           <TabsTrigger value="cancel">Cancelled</TabsTrigger>
+          <TabsTrigger value="completed">Completed</TabsTrigger>
         </TabsList>
       </Tabs>
 

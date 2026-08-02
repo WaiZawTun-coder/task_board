@@ -1,7 +1,7 @@
 import { pool } from "@/lib/db.lib";
 import { headers } from "next/headers";
 
-const taskStatuses = new Set(["pending", "on_going", "cancel"]);
+const taskStatuses = new Set(["pending", "on_going", "cancel", "completed"]);
 const taskPriorities = new Set(["low", "medium", "high"]);
 
 async function getUserId() {

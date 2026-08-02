@@ -30,6 +30,10 @@ const statusConfig: Record<
     label: "Cancelled",
     className: "bg-red-500/10 text-red-700 dark:text-red-400",
   },
+  completed: {
+    label: "Completed",
+    className: "bg-green-500/10 text-green-700 dark:text-green-400",
+  },
 };
 
 const priorityConfig: Record<
@@ -54,6 +58,10 @@ function getDueDate(task: TaskType) {
   if (!task.due) return null;
   const date = new Date(task.due);
   return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function isCompleted(task: TaskType) {
+  return task.status === "completed";
 }
 
 function isOverdue(task: TaskType) {
@@ -109,7 +117,9 @@ export function TaskListItem({
           <span
             className={cn(
               "flex items-center gap-1 text-xs text-muted-foreground",
-              overdue && "font-medium text-destructive",
+              overdue &&
+                task.status !== "completed" &&
+                "font-medium text-destructive",
             )}
           >
             <CalendarIcon className="h-3.5 w-3.5" />

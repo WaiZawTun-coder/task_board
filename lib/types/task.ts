@@ -3,7 +3,7 @@ type TaskType = {
   projectId?: number;
   title: string;
   description: string;
-  status: "pending" | "on_going" | "cancel";
+  status: "pending" | "on_going" | "cancel" | "completed";
   priority: "low" | "medium" | "high";
   due: Date;
 };

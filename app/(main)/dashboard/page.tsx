@@ -45,8 +45,8 @@ type DashboardData = {
 };
 
 const EMPTY_DASHBOARD: DashboardData = {
-  columns: { pending: [], on_going: [], cancel: [] },
-  counts: { pending: 0, on_going: 0, cancel: 0 },
+  columns: { pending: [], on_going: [], cancel: [], completed: [] },
+  counts: { pending: 0, on_going: 0, cancel: 0, completed: 0 },
   stats: { total: 0, overdue: 0 },
   upcoming: [],
   recent: [],
@@ -57,6 +57,7 @@ const statusLabels = {
   pending: "To Do",
   on_going: "In Progress",
   cancel: "Cancelled",
+  completed: "Completed",
 } as const;
 
 const getDueDate = (task: TaskType) => {
@@ -104,9 +105,10 @@ export default function Dashboard() {
 
   const loadDashboard = useCallback(async () => {
     try {
-      const response = await fetchApi<{ success: boolean; data: DashboardData }>(
-        "/api/protected/dashboard",
-      );
+      const response = await fetchApi<{
+        success: boolean;
+        data: DashboardData;
+      }>("/api/protected/dashboard");
 
       if (response.success) setDashboard(response.data);
     } catch (error) {
@@ -126,6 +128,7 @@ export default function Dashboard() {
   const pendingTasks = dashboard.columns.pending;
   const inProgressTasks = dashboard.columns.on_going;
   const cancelledTasks = dashboard.columns.cancel;
+  const completedTasks = dashboard.columns.completed;
   const upcomingTasks = dashboard.upcoming;
 
   const handleDragEnd = async (event: DragEndEvent) => {
@@ -271,6 +274,13 @@ export default function Dashboard() {
                   dotClass="bg-red-500"
                   tasks={cancelledTasks}
                   totalCount={dashboard.counts.cancel}
+                />
+                <TaskColumn
+                  status="completed"
+                  title={statusLabels.completed}
+                  dotClass="bg-green-500"
+                  tasks={completedTasks}
+                  totalCount={dashboard.counts.completed}
                 />
               </div>
               <DragOverlay>

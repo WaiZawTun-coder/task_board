@@ -5,6 +5,7 @@ const EMPTY_COLUMNS = {
   pending: [],
   on_going: [],
   cancel: [],
+  completed: [],
 };
 
 export async function GET() {
@@ -112,6 +113,7 @@ export async function GET() {
           pending: 0,
           on_going: 0,
           cancel: 0,
+          completed: 0,
           ...(dashboard?.counts ?? {}),
         },
         stats: dashboard?.stats ?? { total: 0, overdue: 0 },

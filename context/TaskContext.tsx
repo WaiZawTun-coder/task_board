@@ -41,7 +41,7 @@ type TaskContextType = {
     title: string;
     description: string;
     due: Date;
-    status: "pending" | "on_going" | "cancel";
+    status: "pending" | "on_going" | "cancel" | "completed";
     priority: "low" | "medium" | "high";
   }) => Promise<{ success: boolean }>;
   deleteTask: ({
@@ -142,7 +142,7 @@ export const TaskProvider = ({ children }: { children: React.ReactNode }) => {
     title: string;
     description: string;
     due: Date;
-    status: "pending" | "on_going" | "cancel";
+    status: "pending" | "on_going" | "cancel" | "completed";
     priority: "low" | "medium" | "high";
   }): Promise<{ success: boolean }> => {
     if (authLoading || !user?.user_id) return { success: false };

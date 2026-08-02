@@ -37,6 +37,7 @@ const STATUS_LABELS: Record<TaskType["status"], string> = {
   pending: "To Do",
   on_going: "In Progress",
   cancel: "Cancelled",
+  completed: "Completed",
 };
 
 const PRIORITY_LABELS: Record<TaskType["priority"], string> = {
