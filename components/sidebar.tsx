@@ -25,6 +25,7 @@ import {
   SheetTitle,
 } from "@/components/UI/sheet";
 import { useProject } from "@/context/ProjectContext";
+import { useToday } from "@/context/TodayContext";
 import ProjectType from "@/lib/types/project";
 import { cn } from "@/lib/utils";
 import NewProject from "./newProject";
@@ -42,12 +43,13 @@ type NavItem = {
   children?: NavChild[];
 };
 
-// Wire `badge` up to real data (e.g. unread counts) and `children` to
-// real sub-routes as your app grows.
+// The /today badge is wired to live data via `useToday()` below.
+// Wire other `badge` values up to real data and `children` to real
+// sub-routes as your app grows.
 const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/tasks", label: "All Tasks", icon: ListChecks },
-  { href: "/today", label: "Today", icon: CalendarDays, badge: 3 },
+  { href: "/today", label: "Today", icon: CalendarDays },
   { href: "/calendar", label: "Calendar", icon: Calendar },
   {
     href: "/analytics",
@@ -106,6 +108,7 @@ function NavLinks({
 }) {
   const pathname = usePathname();
   const [expanded, setExpanded] = useState<string | null>(null);
+  const { actionableCount } = useToday();
 
   // Auto-expand a submenu if a child route is currently active.
   useEffect(() => {
@@ -126,6 +129,10 @@ function NavLinks({
         const active = isActivePath(pathname, item.href);
         const hasChildren = !!item.children?.length;
         const isExpanded = expanded === item.href;
+        // /today gets a live count of overdue + not-yet-completed tasks;
+        // everything else falls back to its static `badge` (if any).
+        const badgeValue =
+          item.href === "/today" ? actionableCount : item.badge;
 
         return (
           <li key={item.href}>
@@ -146,9 +153,9 @@ function NavLinks({
               >
                 <Icon className="h-5 w-5 shrink-0" />
                 {!collapsed && <span className="truncate">{item.label}</span>}
-                {!collapsed && item.badge ? (
+                {!collapsed && badgeValue ? (
                   <Badge variant="secondary" className="ml-auto">
-                    {item.badge}
+                    {badgeValue}
                   </Badge>
                 ) : null}
               </Link>
@@ -373,20 +380,6 @@ const Sidebar = () => {
     return () => clearTimeout(timeout);
   }, []);
 
-  // Simulated fetch — swap for a real `/api/protected/project` call
-  // scoped to the current user.
-  // useEffect(() => {
-  //   const timeout = setTimeout(() => {
-  //     setProjects([
-  //       { id: "website-redesign", name: "Website Redesign", color: "#3b82f6" },
-  //       { id: "mobile-app", name: "Mobile App", color: "#a855f7" },
-  //       { id: "q4-marketing", name: "Q4 Marketing", color: "#22c55e" },
-  //     ]);
-  //     setProjectsLoading(false);
-  //   }, 600);
-  //   return () => clearTimeout(timeout);
-  // }, []);
-
   const handleAddProject = useCallback(
     async ({
       title,
@@ -411,7 +404,6 @@ const Sidebar = () => {
 
         return { success: true, message: "Project created successful" };
       } catch {
-        // throw new Error("Unable to create project");
         return { success: false, message: "Unable to create project" };
       }
     },

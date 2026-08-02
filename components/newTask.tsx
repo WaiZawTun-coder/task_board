@@ -232,7 +232,11 @@ const NewTask = ({
                     mode="single"
                     selected={formData.due}
                     onSelect={handleDateSelect}
-                    disabled={(date) => date < new Date()}
+                    disabled={(date) => {
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
+                      return date < today;
+                    }}
                   />
                 </PopoverContent>
               </Popover>

@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { NotificationProvider } from "@/context/NotificationContext";
 import { ProjectProvider } from "@/context/ProjectContext";
 import { TaskProvider } from "@/context/TaskContext";
-import { useRouter } from "next/navigation";
+import { TodayProvider } from "@/context/TodayContext";
 
 export default function MainLayout({
   children,
@@ -27,15 +27,17 @@ export default function MainLayout({
     <ProjectProvider>
       <TaskProvider>
         <NotificationProvider>
-          <div className="flex min-h-screen flex-col">
-            <DashboardHeader />
-            <div className="flex flex-1 min-h-0">
-              <Sidebar />
-              <div className="mx-auto flex-2 max-w-7xl overflow-y-auto">
-                {children}
+          <TodayProvider>
+            <div className="flex min-h-screen flex-col">
+              <DashboardHeader />
+              <div className="flex flex-1 min-h-0">
+                <Sidebar />
+                <div className="mx-auto flex-2 max-w-7xl overflow-y-auto">
+                  {children}
+                </div>
               </div>
             </div>
-          </div>
+          </TodayProvider>
         </NotificationProvider>
       </TaskProvider>
     </ProjectProvider>

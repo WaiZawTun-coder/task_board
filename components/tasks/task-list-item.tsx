@@ -161,10 +161,10 @@ export function TaskListItem({
         </DropdownMenu>
 
         <DropdownMenu>
-          <DropdownMenuTrigger>
-            <Button variant="ghost" size="icon-sm">
-              <MoreVertical className="h-4 w-4" />
-            </Button>
+          <DropdownMenuTrigger className="cursor-pointer">
+            {/* <Button variant="ghost" size="icon-sm"> */}
+            <MoreVertical className="h-4 w-4" />
+            {/* </Button> */}
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={onEdit}>

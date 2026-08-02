@@ -23,6 +23,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/UI/tabs";
 import { SearchIcon } from "lucide-react";
 import ProjectType from "@/lib/types/project";
 import TaskType from "@/lib/types/task";
+import { cn } from "@/lib/utils";
 
 export type StatusFilter = "all" | TaskType["status"];
 export type SortOption = "due_asc" | "due_desc" | "priority_desc" | "title_asc";
@@ -105,11 +106,18 @@ export function TaskFilters({
 
       <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
         <DropdownMenu>
-          <DropdownMenuTrigger>
-            <Button variant="outline" size="sm">
-              <SlidersHorizontal className="h-4 w-4" />
-              Priority{priorities.length > 0 ? ` (${priorities.length})` : ""}
-            </Button>
+          <DropdownMenuTrigger
+            className={cn(
+              "w-full border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+              "h-8 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
+              "flex flex-1 min-w-fit items-center justify-start text-left font-normal",
+              "group/button cursor-pointer inline-flex shrink-0 items-center justify-start rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+            )}
+          >
+            {/* <Button variant="outline" size="sm"> */}
+            <SlidersHorizontal className="h-4 w-4" />
+            Priority{priorities.length > 0 ? ` (${priorities.length})` : ""}
+            {/* </Button> */}
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuGroup>
@@ -129,10 +137,17 @@ export function TaskFilters({
         </DropdownMenu>
 
         <DropdownMenu>
-          <DropdownMenuTrigger>
-            <Button variant="outline" size="sm">
-              {selectedProject ? selectedProject.title : "Project"}
-            </Button>
+          <DropdownMenuTrigger
+            className={cn(
+              "w-full border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+              "h-8 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
+              "flex flex-1 min-w-fit justify-start text-left font-normal",
+              "group/button cursor-pointer inline-flex shrink-0 items-center justify-start rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+            )}
+          >
+            {/* <Button variant="outline" size="sm"> */}
+            {selectedProject ? selectedProject.title : "Project"}
+            {/* </Button> */}
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuGroup>
@@ -165,10 +180,17 @@ export function TaskFilters({
         </DropdownMenu>
 
         <DropdownMenu>
-          <DropdownMenuTrigger>
-            <Button variant="outline" size="sm">
-              Sort: {SORT_LABELS[sort]}
-            </Button>
+          <DropdownMenuTrigger
+            className={cn(
+              "w-full border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+              "h-8 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
+              "flex flex-1 min-w-fit justify-start text-left font-normal",
+              "group/button cursor-pointer inline-flex shrink-0 items-center justify-start rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+            )}
+          >
+            {/* <Button variant="outline" size="sm"> */}
+            Sort: {SORT_LABELS[sort]}
+            {/* </Button> */}
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuRadioGroup

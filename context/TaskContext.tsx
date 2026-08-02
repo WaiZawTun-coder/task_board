@@ -221,8 +221,6 @@ export const TaskProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   useEffect(() => {
-    // The dashboard has its own compact query. Avoid loading every task just
-    // because the shared provider is mounted in the main layout.
     if (pathname === "/dashboard") return;
     if (authLoading || !user?.user_id || isInitialized.current) return;
 
