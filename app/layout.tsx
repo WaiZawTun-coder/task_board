@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { DM_Sans, Geist, Geist_Mono, Roboto } from "next/font/google";
 import { ThemeProvider } from "../providers/themeProvider";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
 const dmSansHeading = DM_Sans({
@@ -70,6 +71,7 @@ export default function RootLayout({
           <ThemeProvider>{children}</ThemeProvider>
         </AuthProvider>
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
