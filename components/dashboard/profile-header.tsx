@@ -10,7 +10,7 @@ import { useAuth } from "@/context/AuthContext";
 const ProfileHeader = () => {
   const router = useRouter();
 
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
 
   return (
     <Popover>
@@ -18,7 +18,9 @@ const ProfileHeader = () => {
         {/* <Button variant="ghost" size="icon"> */}
         <Avatar>
           <AvatarImage src="/path/to/avatar.jpg" />
-          <AvatarFallback>N</AvatarFallback>
+          <AvatarFallback>
+            {user?.username.charAt(0).toUpperCase()}
+          </AvatarFallback>
         </Avatar>
         {/* </Button> */}
       </PopoverTrigger>

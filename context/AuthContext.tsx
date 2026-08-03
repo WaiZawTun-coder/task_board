@@ -43,6 +43,7 @@ type AuthContextType = {
     password: string;
   }) => Promise<void>;
   refresh: () => Promise<string>;
+  updateUser: (data: Partial<{ username: string; email: string }>) => void;
   isAuthenticated: boolean;
 };
 
@@ -218,6 +219,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return refreshRequest;
   }, []);
 
+  // update the local user state after a successful profile edit, without
+  // needing to reissue the access token (username/email here are display
+  // fields, not used for authorization — that's driven by the refreshToken
+  // cookie / x-user-id header from the proxy)
+  const updateUser = useCallback(
+    (data: Partial<{ username: string; email: string }>) => {
+      setUser((prev) => (prev ? { ...prev, ...data } : prev));
+    },
+    [],
+  );
+
   useEffect(() => {
     if (isInitialized.current) return;
     isInitialized.current = true;
@@ -236,7 +248,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setAccessToken(null);
         setUser(null);
 
-        console.log("pathname: ", pathname);
         if (pathname !== "/") router.replace("/login");
       } finally {
         if (alive) setAuthLoading(false);
@@ -258,6 +269,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         logout,
         register,
         refresh,
+        updateUser,
         isAuthenticated: !!user,
       }}
     >
