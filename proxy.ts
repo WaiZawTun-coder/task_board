@@ -5,6 +5,7 @@ import { ratelimit } from "./lib/rate-limit.lib";
 export async function proxy(request: NextRequest) {
   try {
     const ip = request.headers.get("x-forwarded-for") ?? "127.0.0.1";
+    console.log({ ip });
     const { success } = await ratelimit.limit(ip);
 
     if (!success) {
