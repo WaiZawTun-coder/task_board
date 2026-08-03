@@ -20,9 +20,10 @@ export const pool =
       process.env.NODE_ENV === "production"
         ? {
             rejectUnauthorized: true,
-            ca: fs.readFileSync(
-              url.fileURLToPath(new URL("../certs/ca.pem", import.meta.url)),
-            ),
+            // ca: fs.readFileSync(
+            //   url.fileURLToPath(new URL("../certs/ca.pem", import.meta.url)),
+            // ),
+            ca: process.env.PEM?.replace(/\\n/g, "\n") || "",
           }
         : false,
   });
