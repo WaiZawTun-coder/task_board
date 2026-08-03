@@ -7,4 +7,13 @@ type ProjectType = {
   color_hex: string;
 };
 
+export type ProjectStats = {
+  total: number;
+  completed: number;
+  on_going: number;
+  pending: number;
+  cancel: number;
+  overdue: number;
+};
+
 export default ProjectType;

@@ -22,7 +22,24 @@ export async function GET(request: Request) {
       );
 
     const result = await pool.query(
-      "SELECT * FROM projects WHERE project_id = $1 AND user_id = $2",
+      `
+        SELECT
+          p.*,
+          json_build_object(
+            'total', COUNT(t.task_id)::int,
+            'completed', COUNT(t.task_id) FILTER (WHERE t.status = 'completed')::int,
+            'on_going', COUNT(t.task_id) FILTER (WHERE t.status = 'on_going')::int,
+            'pending', COUNT(t.task_id) FILTER (WHERE t.status = 'pending')::int,
+            'cancel', COUNT(t.task_id) FILTER (WHERE t.status = 'cancel')::int,
+            'overdue', COUNT(t.task_id) FILTER (
+              WHERE t.due::date < CURRENT_DATE AND t.status NOT IN ('completed', 'cancel')
+            )::int
+          ) AS stats
+        FROM projects p
+        LEFT JOIN tasks t ON t.project_id = p.project_id
+        WHERE p.project_id = $1 AND p.user_id = $2
+        GROUP BY p.project_id
+      `,
       [projectId, userId],
     );
     if (result.rowCount === 0)

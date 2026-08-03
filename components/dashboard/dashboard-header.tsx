@@ -12,7 +12,7 @@ const DashboardHeader = () => {
 
   return (
     <header className="border-b">
-      <div className="flex h-14 items-center gap-2 px-3 sm:h-16 sm:gap-4 sm:px-6">
+      <div className="flex h-14 items-center gap-2 px-3 sm:h-16 sm:gap-4 sm:px-6 fixed top-0 w-full bg-background">
         {/* Search: hidden on mobile, visible from sm up */}
         <Input
           placeholder="Search tasks..."

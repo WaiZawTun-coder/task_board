@@ -29,6 +29,7 @@ import {
   ComboboxItem,
   ComboboxList,
 } from "./UI/combobox";
+import NewProject from "./newProject";
 
 type NewTaskFormData = {
   title: string;
@@ -192,7 +193,17 @@ const NewTask = ({
             >
               <ComboboxInput placeholder="Select a project" />
               <ComboboxContent>
-                <ComboboxEmpty>No items found</ComboboxEmpty>
+                {isProjectsLoading && (
+                  <ComboboxList>
+                    <ComboboxItem>
+                      Loading... <Loader2 className="h-4 w-4 animate-spin" />
+                    </ComboboxItem>
+                  </ComboboxList>
+                )}
+                <ComboboxEmpty className="flex flex-col">
+                  No items found
+                  {/* <NewProject /> */}
+                </ComboboxEmpty>
                 <ComboboxList>
                   {(item) => {
                     return (

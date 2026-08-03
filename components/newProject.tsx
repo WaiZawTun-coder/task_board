@@ -37,9 +37,15 @@ type NewProjectProps = {
   onCreate?: (
     data: NewProjectFormData,
   ) => Promise<void> | Promise<CreateProjectResult> | void;
+  text?: string;
+  variant?: "default" | "outline" | "ghost";
 };
 
-const NewProject = ({ onCreate }: NewProjectProps) => {
+const NewProject = ({
+  onCreate,
+  text = "",
+  variant = "ghost",
+}: NewProjectProps) => {
   const formId = useId();
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState<NewProjectFormData>(INITIAL_FORM);
@@ -133,11 +139,12 @@ const NewProject = ({ onCreate }: NewProjectProps) => {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <Button
-        variant="ghost"
+        variant={variant}
         size="default"
         onClick={() => handleOpenChange(true)}
       >
         <Plus className="h-4 w-4" />
+        {text.trim() !== "" && text}
       </Button>
 
       <DialogContent className="sm:max-w-md">

@@ -30,7 +30,7 @@ export default function MainLayout({
           <TodayProvider>
             <div className="flex min-h-screen flex-col">
               <DashboardHeader />
-              <div className="flex flex-1 min-h-0">
+              <div className="flex flex-1 min-h-0 mt-16">
                 <Sidebar />
                 <div className="mx-auto flex-2 max-w-7xl overflow-y-auto">
                   {children}

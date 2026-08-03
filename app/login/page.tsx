@@ -173,7 +173,7 @@ const Login = () => {
                 )}
               </button>
 
-              <div className="relative my-6">
+              {/* <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-gray-200 dark:border-gray-600"></div>
                 </div>
@@ -182,10 +182,10 @@ const Login = () => {
                     Or continue with
                   </span>
                 </div>
-              </div>
+              </div> */}
 
-              <div className="grid grid-cols-1 gap-3">
-                <button
+              {/* <div className="grid grid-cols-1 gap-3"> */}
+              {/* <button
                   type="button"
                   className="py-3 px-4 bg-white/90 dark:bg-gray-700/90 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors flex items-center justify-center gap-2 text-gray-700 dark:text-gray-200 font-medium"
                   disabled={isSubmitting}
@@ -209,15 +209,15 @@ const Login = () => {
                     />
                   </svg>
                   Google
-                </button>
-                {/* <button
+                </button> */}
+              {/* <button
                   type="button"
                   className="py-3 px-4 bg-white/90 dark:bg-gray-700/90 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors flex items-center justify-center gap-2 text-gray-700 dark:text-gray-200 font-medium"
                 >
                   <Apple className="w-5 h-5" />
                   GitHub
                 </button> */}
-              </div>
+              {/* </div> */}
             </form>
 
             <p className="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">

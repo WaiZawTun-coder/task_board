@@ -12,11 +12,14 @@ import {
   startOfWeek,
 } from "date-fns";
 
+import { getTaskDueDate } from "@/lib/calendar-utils";
 import ProjectType from "@/lib/types/project";
 import TaskType from "@/lib/types/task";
 import { cn } from "@/lib/utils";
+import { DayTaskPill } from "./day-task-pill";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MAX_VISIBLE_TASKS = 2;
 
 type CalendarMonthProps = {
   month: Date;
@@ -25,11 +28,6 @@ type CalendarMonthProps = {
   projects: ProjectType[];
   onSelectDate: (date: Date) => void;
 };
-
-function getTaskDate(task: TaskType) {
-  const dueDate = new Date(task.due);
-  return Number.isNaN(dueDate.getTime()) ? null : dueDate;
-}
 
 export function CalendarMonth({
   month,
@@ -45,17 +43,23 @@ export function CalendarMonth({
 
   const tasksByDay = new Map<string, TaskType[]>();
   tasks.forEach((task) => {
-    const dueDate = getTaskDate(task);
+    const dueDate = getTaskDueDate(task);
     if (!dueDate) return;
     const key = format(dueDate, "yyyy-MM-dd");
     tasksByDay.set(key, [...(tasksByDay.get(key) ?? []), task]);
   });
 
+  const projectForTask = (task: TaskType) =>
+    projects.find((project) => project.project_id === task.projectId);
+
   return (
     <div className="overflow-hidden rounded-xl border bg-card">
       <div className="grid grid-cols-7 border-b bg-muted/40">
         {WEEKDAYS.map((weekday) => (
-          <div key={weekday} className="p-2 text-center text-xs font-medium text-muted-foreground sm:p-3 sm:text-sm">
+          <div
+            key={weekday}
+            className="p-1.5 text-center text-[11px] font-medium text-muted-foreground sm:p-2 sm:text-xs"
+          >
             {weekday}
           </div>
         ))}
@@ -64,8 +68,8 @@ export function CalendarMonth({
         {calendarDays.map((day) => {
           const dayTasks = tasksByDay.get(format(day, "yyyy-MM-dd")) ?? [];
           const outsideMonth = !isSameMonth(day, month);
-          const projectForTask = (task: TaskType) =>
-            projects.find((project) => project.project_id === task.projectId);
+          const visibleTasks = dayTasks.slice(0, MAX_VISIBLE_TASKS);
+          const hiddenCount = dayTasks.length - visibleTasks.length;
 
           return (
             <button
@@ -74,46 +78,31 @@ export function CalendarMonth({
               onClick={() => onSelectDate(day)}
               aria-pressed={isSameDay(day, selectedDate)}
               className={cn(
-                "min-h-24 border-b border-r p-1.5 text-left transition-colors hover:bg-muted/60 focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-h-32 sm:p-2",
+                "min-h-16 border-r border-b p-1 text-left transition-colors hover:bg-muted/60 focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:min-h-24 sm:p-1.5",
                 outsideMonth && "bg-muted/20 text-muted-foreground",
-                isSameDay(day, selectedDate) && "bg-primary/5 ring-1 ring-inset ring-primary/30",
+                isSameDay(day, selectedDate) &&
+                  "bg-primary/5 ring-1 ring-primary/30 ring-inset",
               )}
             >
               <span
                 className={cn(
-                  "mb-1 flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium sm:text-sm",
+                  "mb-1 flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-medium",
                   isToday(day) && "bg-primary text-primary-foreground",
                 )}
               >
                 {format(day, "d")}
               </span>
-              <div className="space-y-1">
-                {dayTasks.slice(0, 3).map((task) => {
-                  const project = projectForTask(task);
-                  return (
-                    <div
-                      key={task.task_id}
-                      className={cn(
-                        "truncate rounded px-1.5 py-1 text-[10px] font-medium sm:text-xs",
-                        task.status === "completed"
-                          ? "bg-green-500/10 text-green-700 line-through dark:text-green-400"
-                          : "bg-primary/10 text-primary",
-                      )}
-                      title={task.title}
-                    >
-                      {project && (
-                        <span
-                          className="mr-1 inline-block h-1.5 w-1.5 rounded-full"
-                          style={{ backgroundColor: project.color_hex }}
-                        />
-                      )}
-                      {task.title}
-                    </div>
-                  );
-                })}
-                {dayTasks.length > 3 && (
-                  <p className="px-1 text-[10px] text-muted-foreground sm:text-xs">
-                    +{dayTasks.length - 3} more
+              <div className="space-y-0.5">
+                {visibleTasks.map((task) => (
+                  <DayTaskPill
+                    key={task.task_id}
+                    task={task}
+                    project={projectForTask(task)}
+                  />
+                ))}
+                {hiddenCount > 0 && (
+                  <p className="px-1 text-[9px] text-muted-foreground">
+                    +{hiddenCount} more
                   </p>
                 )}
               </div>

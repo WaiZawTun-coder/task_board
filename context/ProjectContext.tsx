@@ -37,12 +37,12 @@ type ProjectContextType = {
     description?: string;
     status: "active" | "archived" | "completed";
     color_hex?: string;
-  }) => Promise<{ success: boolean }>;
+  }) => Promise<{ success: boolean; message?: string }>;
   deleteProject: ({
     project_id,
   }: {
     project_id: number;
-  }) => Promise<{ success: boolean }>;
+  }) => Promise<{ success: boolean; message?: string }>;
 };
 
 const ProjectContext = createContext<ProjectContextType | null>(null);
@@ -108,12 +108,6 @@ export const ProjectProvider = ({
       }
 
       setProjects((prev) => [...prev, data.data]);
-      // setProjectsMap((prev) => {
-      //   const newMap = new Map(prev);
-      //   newMap.set(data.data.project_id, newProject.data);
-
-      //   return newMap;
-      // });
 
       return data;
     } catch (err: unknown) {
@@ -150,7 +144,7 @@ export const ProjectProvider = ({
         color_hex,
       };
 
-      const data: { success: boolean } = await fetchApi(
+      const data: { success: boolean; message?: string } = await fetchApi(
         `/api/protected/project`,
         {
           method: "PUT",
@@ -159,21 +153,20 @@ export const ProjectProvider = ({
       );
 
       if (data.success) {
-        // setProjectsMap((prev) => {
-        //   const newMap = new Map(prev);
-        //   const currentItem = newMap.get(project_id);
-        //   if (currentItem) {
-        //     newMap.set(project_id, {
-        //       project_id,
-        //       title: title || currentItem.title,
-        //       slug: slug || currentItem.slug,
-        //       description: description || currentItem.description,
-        //       status: status || currentItem.status,
-        //       colorHex: color_hex || currentItem.colorHex,
-        //     });
-        //   }
-        //   return newMap;
-        // });
+        setProjects((prev) =>
+          prev.map((project) =>
+            project.project_id === project_id
+              ? {
+                  ...project,
+                  title: title ?? project.title,
+                  slug: slug ?? project.slug,
+                  description: description ?? project.description,
+                  status: status ?? project.status,
+                  color_hex: color_hex ?? project.color_hex,
+                }
+              : project,
+          ),
+        );
       }
 
       return data;
@@ -186,9 +179,27 @@ export const ProjectProvider = ({
     project_id,
   }: {
     project_id: number;
-  }): Promise<{ success: boolean }> => {
-    console.log({ project_id });
-    return { success: false };
+  }): Promise<{ success: boolean; message?: string }> => {
+    if (authLoading || !user?.user_id) {
+      return { success: false, message: "No logged in user detected" };
+    }
+
+    try {
+      const data: { success: boolean; message?: string } = await fetchApi(
+        "/api/protected/project",
+        { method: "DELETE", body: { project_id } },
+      );
+
+      if (data.success) {
+        setProjects((prev) =>
+          prev.filter((project) => project.project_id !== project_id),
+        );
+      }
+
+      return data;
+    } catch (err: unknown) {
+      throw err;
+    }
   };
 
   useEffect(() => {

@@ -105,6 +105,7 @@ export async function PUT(request: Request) {
     const userId = await getUserId();
     const {
       task_id: taskId,
+      project_id: projectId,
       title,
       description,
       due,

@@ -313,9 +313,16 @@ function ProjectsSection({
               <ProjectsSkeleton collapsed={false} />
             </li>
           ) : projects.length === 0 ? (
-            <li className="px-3 py-1.5 text-sm text-muted-foreground">
-              No projects yet
-            </li>
+            <>
+              <li className="px-3 py-1.5 text-sm text-muted-foreground">
+                No projects yet
+              </li>
+              <NewProject
+                onCreate={onAddProject}
+                text="Create a Project"
+                variant="default"
+              />
+            </>
           ) : (
             projects.map((project) => {
               const href = `/projects/${project.project_id}`;
@@ -434,7 +441,7 @@ const Sidebar = () => {
       <aside
         data-slot="sidebar"
         className={cn(
-          "hidden shrink-0 border-r bg-background transition-[width] duration-200 md:flex md:flex-col",
+          "hidden shrink-0 border-r bg-background transition-[width] duration-200 md:flex md:flex-col max-h-[calc(100dvh-64px)] sticky md:top-16",
           collapsed ? "md:w-17" : "md:w-64",
         )}
       >
@@ -463,7 +470,7 @@ const Sidebar = () => {
       </aside>
 
       {/* Mobile trigger */}
-      <div className="p-2 md:hidden">
+      <div className="p-2 md:hidden max-h-[calc(100dvh-64px)] fixed top-2">
         <Button
           variant="ghost"
           size="icon"

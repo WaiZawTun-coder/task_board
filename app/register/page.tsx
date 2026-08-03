@@ -32,12 +32,14 @@ const Register = () => {
     password: string;
     confirmPassword: string;
     global: string;
+    agreeTerms: string;
   }>({
     username: "",
     email: "",
     password: "",
     confirmPassword: "",
     global: "",
+    agreeTerms: "",
   });
   const [agreeTerms, setAgreeTerms] = useState<boolean>(false);
 
@@ -60,9 +62,19 @@ const Register = () => {
       password: "",
       confirmPassword: "",
       global: "",
+      agreeTerms: "",
     });
 
     let isValid = true;
+
+    if (!agreeTerms) {
+      setError((prev) => ({
+        ...prev,
+        agreeTerms:
+          "You must agree to Terms of Service and Privacy Policy to continue",
+      }));
+      isValid = false;
+    }
 
     if (formData.username.trim() === "") {
       setError((prev) => ({ ...prev, username: "Username cannot be empty" }));
@@ -193,33 +205,41 @@ const Register = () => {
                 loading={isSubmitting}
               />
 
-              <div className="flex items-start gap-2">
-                <input
-                  type="checkbox"
-                  id="terms"
-                  className="w-4 h-4 mt-0.5 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700"
-                  checked={agreeTerms}
-                  onChange={(e) => setAgreeTerms(e.target.checked)}
-                />
-                <label
-                  htmlFor="terms"
-                  className="text-sm text-gray-600 dark:text-gray-300"
-                >
-                  I agree to the{" "}
-                  <a
-                    href="#"
-                    className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
+              <div className="flex items-start gap-2 flex-col">
+                <div className="flex items-start gap-2">
+                  <input
+                    type="checkbox"
+                    id="terms"
+                    className="w-4 h-4 mt-0.5 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700"
+                    checked={agreeTerms}
+                    onChange={(e) => setAgreeTerms(e.target.checked)}
+                    aria-invalid={error.agreeTerms.trim() !== ""}
+                  />
+                  <label
+                    htmlFor="terms"
+                    className="text-sm text-gray-600 dark:text-gray-300"
                   >
-                    Terms of Service
-                  </a>{" "}
-                  and{" "}
-                  <a
-                    href="#"
-                    className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
-                  >
-                    Privacy Policy
-                  </a>
-                </label>
+                    I agree to the{" "}
+                    <a
+                      href="#"
+                      className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
+                    >
+                      Terms of Service
+                    </a>{" "}
+                    and{" "}
+                    <a
+                      href="#"
+                      className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
+                    >
+                      Privacy Policy
+                    </a>
+                  </label>
+                </div>
+                {error.agreeTerms.trim() !== "" && (
+                  <span className="text-xs text-red-500 dark:text-red-400 font-medium mb-2">
+                    {error.agreeTerms}
+                  </span>
+                )}
               </div>
 
               {error.global.trim() !== "" && (
@@ -235,7 +255,7 @@ const Register = () => {
                 Create Account <ArrowRight className="w-5 h-5" />
               </button>
 
-              <div className="relative my-6">
+              {/* <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-gray-200 dark:border-gray-600"></div>
                 </div>
@@ -244,10 +264,10 @@ const Register = () => {
                     Or sign up with
                   </span>
                 </div>
-              </div>
+              </div> */}
 
-              <div className="grid grid-cols-1 gap-3">
-                <button
+              {/* <div className="grid grid-cols-1 gap-3"> */}
+              {/* <button
                   type="button"
                   className="py-3 px-4 bg-white/90 dark:bg-gray-700/90 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors flex items-center justify-center gap-2 text-gray-700 dark:text-gray-200 font-medium"
                 >
@@ -270,15 +290,15 @@ const Register = () => {
                     />
                   </svg>
                   Google
-                </button>
-                {/* <button
+                </button> */}
+              {/* <button
                     type="button"
                     className="py-3 px-4 bg-white/90 dark:bg-gray-700/90 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors flex items-center justify-center gap-2 text-gray-700 dark:text-gray-200 font-medium"
                   >
                     <Github className="w-5 h-5" />
                     GitHub
                   </button> */}
-              </div>
+              {/* </div> */}
             </form>
 
             <p className="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">
