@@ -1,4 +1,5 @@
 type NotificationType = {
+  notification_id?: number;
   id?: number | string;
   title: string;
   message: string;

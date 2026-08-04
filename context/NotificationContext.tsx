@@ -12,8 +12,12 @@ import {
 } from "react";
 import { useAuth } from "./AuthContext";
 
+const RECENT_LIMIT = 10;
+const POLL_INTERVAL_MS = 60_000;
+
 type NotificationContextType = {
   notifications: NotificationType[];
+  unreadCount: number;
   isLoading: boolean;
   notify: (
     title: string,
@@ -21,6 +25,13 @@ type NotificationContextType = {
     type: "success" | "error" | "info",
   ) => void;
   loadNotifications: () => void;
+  markAsRead: (
+    notification: NotificationType,
+  ) => Promise<{ success: boolean; message?: string }>;
+  markAllAsRead: () => Promise<{ success: boolean; message?: string }>;
+  deleteNotification: (
+    notification: NotificationType,
+  ) => Promise<{ success: boolean; message?: string }>;
 };
 
 const NotificationContext = createContext<NotificationContextType | null>(null);
@@ -36,6 +47,7 @@ export const NotificationProvider = ({
   const { user, authLoading } = useAuth();
 
   const [notifications, setNotifications] = useState<NotificationType[]>([]);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const notificationsLoading = useRef<boolean>(false);
 
@@ -43,14 +55,16 @@ export const NotificationProvider = ({
 
   const isInitialized = useRef(false);
 
-  // notify function to add a new notification
+  // adds a local, ephemeral entry (not persisted to the database) — used
+  // for instant feedback like "Profile updated". Shown in the bell
+  // dropdown alongside server notifications until the next
+  // loadNotifications() refresh replaces the list.
   const notify = (
     title: string,
     message: string,
     type: "success" | "error" | "info" = "info",
   ) => {
     setNotifications((prev) => [
-      ...prev,
       {
         id: crypto.randomUUID(),
         title,
@@ -59,6 +73,7 @@ export const NotificationProvider = ({
         is_read: false,
         created_at: new Date().toISOString(),
       },
+      ...prev,
     ]);
   };
 
@@ -69,23 +84,144 @@ export const NotificationProvider = ({
     setIsLoading(true);
 
     try {
-      const data: { success: boolean; data: NotificationType[] } =
-        await fetchApi(`/api/protected/notification?user_id=${user?.user_id}`);
+      const data: {
+        success: boolean;
+        data: NotificationType[];
+        unreadCount: number;
+      } = await fetchApi(`/api/protected/notification?limit=${RECENT_LIMIT}`);
 
-      setNotifications(data.data || []);
+      if (data.success) {
+        setNotifications(data.data || []);
+        setUnreadCount(data.unreadCount ?? 0);
+      }
     } finally {
       notificationsLoading.current = false;
       setIsLoading(false);
     }
   }, [authLoading, fetchApi, user?.user_id]);
 
+  const markAsRead = async (
+    notification: NotificationType,
+  ): Promise<{ success: boolean; message?: string }> => {
+    // ephemeral, client-only notifications never reached the database
+    if (!notification.notification_id) {
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n.id === notification.id ? { ...n, is_read: true } : n,
+        ),
+      );
+      return { success: true };
+    }
+
+    if (notification.is_read) return { success: true };
+
+    const previous = notifications;
+    const previousUnread = unreadCount;
+
+    setNotifications((prev) =>
+      prev.map((n) =>
+        n.notification_id === notification.notification_id
+          ? { ...n, is_read: true }
+          : n,
+      ),
+    );
+    setUnreadCount((prev) => Math.max(0, prev - 1));
+
+    try {
+      const data: { success: boolean; message?: string } = await fetchApi(
+        "/api/protected/notification",
+        {
+          method: "PUT",
+          body: { notificationId: notification.notification_id },
+        },
+      );
+
+      if (!data.success) {
+        setNotifications(previous);
+        setUnreadCount(previousUnread);
+      }
+
+      return data;
+    } catch (err: unknown) {
+      setNotifications(previous);
+      setUnreadCount(previousUnread);
+      throw err;
+    }
+  };
+
+  const markAllAsRead = async (): Promise<{
+    success: boolean;
+    message?: string;
+  }> => {
+    const previous = notifications;
+    const previousUnread = unreadCount;
+
+    setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+    setUnreadCount(0);
+
+    try {
+      const data: { success: boolean; message?: string } = await fetchApi(
+        "/api/protected/notification",
+        { method: "PUT", body: { markAll: true } },
+      );
+
+      if (!data.success) {
+        setNotifications(previous);
+        setUnreadCount(previousUnread);
+      }
+
+      return data;
+    } catch (err: unknown) {
+      setNotifications(previous);
+      setUnreadCount(previousUnread);
+      throw err;
+    }
+  };
+
+  const deleteNotification = async (
+    notification: NotificationType,
+  ): Promise<{ success: boolean; message?: string }> => {
+    const previous = notifications;
+    const previousUnread = unreadCount;
+
+    setNotifications((prev) =>
+      prev.filter((n) =>
+        notification.notification_id
+          ? n.notification_id !== notification.notification_id
+          : n.id !== notification.id,
+      ),
+    );
+    if (!notification.is_read) setUnreadCount((prev) => Math.max(0, prev - 1));
+
+    if (!notification.notification_id) return { success: true };
+
+    try {
+      const data: { success: boolean; message?: string } = await fetchApi(
+        "/api/protected/notification",
+        {
+          method: "DELETE",
+          body: { notificationId: notification.notification_id },
+        },
+      );
+
+      if (!data.success) {
+        setNotifications(previous);
+        setUnreadCount(previousUnread);
+      }
+
+      return data;
+    } catch (err: unknown) {
+      setNotifications(previous);
+      setUnreadCount(previousUnread);
+      throw err;
+    }
+  };
+
   useEffect(() => {
     if (authLoading || !user?.user_id || isInitialized.current) return;
 
     isInitialized.current = true;
 
-    // schedule async call to avoid sync setState inside effect which can
-    // cause cascading renders
     const id = setTimeout(() => {
       void loadNotifications();
     }, 0);
@@ -93,9 +229,30 @@ export const NotificationProvider = ({
     return () => clearTimeout(id);
   }, [authLoading, user?.user_id, loadNotifications]);
 
+  // periodic refresh so DB-side automation (triggers / scheduled jobs)
+  // shows up without requiring a client-side task mutation first
+  useEffect(() => {
+    if (authLoading || !user?.user_id) return;
+
+    const interval = setInterval(() => {
+      void loadNotifications();
+    }, POLL_INTERVAL_MS);
+
+    return () => clearInterval(interval);
+  }, [authLoading, user?.user_id, loadNotifications]);
+
   return (
     <NotificationContext.Provider
-      value={{ notifications, isLoading, notify, loadNotifications }}
+      value={{
+        notifications,
+        unreadCount,
+        isLoading,
+        notify,
+        loadNotifications,
+        markAsRead,
+        markAllAsRead,
+        deleteNotification,
+      }}
     >
       {children}
     </NotificationContext.Provider>

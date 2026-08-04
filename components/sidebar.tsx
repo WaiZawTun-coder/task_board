@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Bell,
   Calendar,
   CalendarDays,
   ChartColumn,
@@ -30,6 +31,7 @@ import ProjectType from "@/lib/types/project";
 import { cn } from "@/lib/utils";
 import NewProject from "./newProject";
 import Search from "./search";
+import { useNotification } from "@/context/NotificationContext";
 
 type NavChild = {
   href: string;
@@ -51,6 +53,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/tasks", label: "All Tasks", icon: ListChecks },
   { href: "/today", label: "Today", icon: CalendarDays },
+  { href: "/notifications", label: "Notifications", icon: Bell },
   { href: "/calendar", label: "Calendar", icon: Calendar },
   {
     href: "/analytics",
@@ -95,6 +98,7 @@ function NavLinks({
   const pathname = usePathname();
   const [expanded, setExpanded] = useState<string | null>(null);
   const { actionableCount } = useToday();
+  const { unreadCount } = useNotification();
 
   // Auto-expand a submenu if a child route is currently active.
   useEffect(() => {
@@ -118,7 +122,11 @@ function NavLinks({
         // /today gets a live count of overdue + not-yet-completed tasks;
         // everything else falls back to its static `badge` (if any).
         const badgeValue =
-          item.href === "/today" ? actionableCount : item.badge;
+          item.href === "/today"
+            ? actionableCount
+            : item.href === "/notifications"
+              ? unreadCount
+              : item.badge;
 
         return (
           <li key={item.href}>

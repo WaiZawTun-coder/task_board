@@ -1,14 +1,18 @@
 "use client";
 
-import { useNotification } from "@/context/NotificationContext";
 import { Bell } from "lucide-react";
+import Link from "next/link";
 import { useEffect } from "react";
-import { Button } from "../UI/button";
+import { Badge } from "../UI/badge";
+import { buttonVariants } from "../UI/button";
 import { Popover, PopoverContent, PopoverTrigger } from "../UI/popover";
-import NotificationCard from "../notification/notification-card";
+import { useNotification } from "@/context/NotificationContext";
+import { cn } from "@/lib/utils";
+import NotificationCard from "../notifications/notification-card";
 
 const NotificationHeader = () => {
-  const { notifications, loadNotifications } = useNotification();
+  const { notifications, unreadCount, loadNotifications, markAsRead } =
+    useNotification();
 
   useEffect(() => {
     loadNotifications();
@@ -16,26 +20,51 @@ const NotificationHeader = () => {
 
   return (
     <Popover>
-      <PopoverTrigger>
-        {/* <Button variant="ghost" size="icon"> */}
+      <PopoverTrigger className="relative">
         <Bell className="cursor-pointer" />
-        {/* </Button> */}
+        {unreadCount > 0 && (
+          <Badge
+            variant="destructive"
+            className="absolute -right-2 -top-2 h-4 min-w-4 justify-center rounded-full border-none px-1 text-[10px]"
+          >
+            {unreadCount > 99 ? "99+" : unreadCount}
+          </Badge>
+        )}
       </PopoverTrigger>
       <PopoverContent className="w-sm p-2">
-        <div className="space-x-0 space-y-2">
-          <p className="text-sm text-gray-500">Notifications</p>
-          <div className="flex flex-col gap-2">
-            {notifications.length === 0 && (
-              <p className="text-sm text-gray-500">No notifications</p>
-            )}
-            {notifications.map((notification) => (
-              <NotificationCard
-                key={notification.id}
-                notification={notification}
-              />
-            ))}
-          </div>
+        <div className="flex items-center justify-between px-1">
+          <p className="text-sm text-muted-foreground">Notifications</p>
+          {unreadCount > 0 && (
+            <span className="text-xs text-muted-foreground">
+              {unreadCount} unread
+            </span>
+          )}
         </div>
+        <div className="mt-2 flex max-h-80 flex-col gap-1 overflow-y-auto">
+          {notifications.length === 0 && (
+            <p className="px-1 py-3 text-center text-sm text-muted-foreground">
+              No notifications
+            </p>
+          )}
+          {notifications.map((notification) => (
+            <NotificationCard
+              key={notification.notification_id ?? notification.id}
+              notification={notification}
+              onClick={() => {
+                if (!notification.is_read) void markAsRead(notification);
+              }}
+            />
+          ))}
+        </div>
+        <Link
+          href="/notifications"
+          className={cn(
+            buttonVariants({ variant: "ghost", size: "sm" }),
+            "mt-2 w-full justify-center",
+          )}
+        >
+          View all notifications
+        </Link>
       </PopoverContent>
     </Popover>
   );
