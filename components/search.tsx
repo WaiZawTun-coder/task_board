@@ -107,6 +107,7 @@ const Search = ({ className = "" }: { className?: string }) => {
             setIsOpen(false);
           }
         }}
+        onBlur={() => setIsOpen(false)}
       />
 
       {showDropdown && (
