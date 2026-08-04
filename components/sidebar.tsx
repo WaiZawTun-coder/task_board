@@ -29,6 +29,7 @@ import { useToday } from "@/context/TodayContext";
 import ProjectType from "@/lib/types/project";
 import { cn } from "@/lib/utils";
 import NewProject from "./newProject";
+import Search from "./search";
 
 type NavChild = {
   href: string;
@@ -490,6 +491,7 @@ const Sidebar = () => {
               Navigation
             </SheetTitle>
           </SheetHeader>
+          <Search className="mx-4" />
           <nav aria-label="Main navigation" className="p-4">
             {sidebarBody(false, () => setMobileOpen(false))}
           </nav>

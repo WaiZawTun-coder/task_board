@@ -1,116 +1,20 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-import { Layout, ListChecks, Loader2 } from "lucide-react";
 import { useTask } from "@/context/TaskContext";
-import { useProject } from "@/context/ProjectContext";
-import { useApi } from "@/utilities/api";
-import TaskType from "@/lib/types/task";
+import { Layout } from "lucide-react";
 import NewTask from "../newTask";
+import Search from "../search";
 import { ThemeToggle } from "../themeToggler";
-import { Input } from "../UI/input";
 import NotificationHeader from "./notification-header";
 import ProfileHeader from "./profile-header";
 
-const MAX_RESULTS = 5;
-
 const DashboardHeader = () => {
   const { createTask } = useTask();
-  const { projects } = useProject();
-  const fetchApi = useApi();
-  const router = useRouter();
-
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [taskResults, setTaskResults] = useState<TaskType[]>([]);
-  const [isSearchingTasks, setIsSearchingTasks] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
-
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  const matchingProjects = debouncedSearch
-    ? projects
-        .filter((project) =>
-          project.title.toLowerCase().includes(debouncedSearch.toLowerCase()),
-        )
-        .slice(0, MAX_RESULTS)
-    : [];
 
   // debounce the raw input before filtering projects / hitting the tasks API
-  useEffect(() => {
-    const id = setTimeout(() => setDebouncedSearch(search.trim()), 300);
-    return () => clearTimeout(id);
-  }, [search]);
-
-  // look up matching tasks whenever the debounced term changes
-  useEffect(() => {
-    if (!debouncedSearch) {
-      const id = setTimeout(() => {
-        setTaskResults([]);
-      }, 0);
-
-      clearTimeout(id);
-      return;
-    }
-
-    let alive = true;
-    const id = setTimeout(() => {
-      setIsSearchingTasks(true);
-    });
-
-    clearTimeout(id);
-
-    fetchApi<{ success: boolean; data: TaskType[] }>(
-      `/api/protected/tasks?search=${encodeURIComponent(debouncedSearch)}&limit=${MAX_RESULTS}`,
-    )
-      .then((res) => {
-        if (alive && res.success) setTaskResults(res.data || []);
-      })
-      .catch(() => {
-        if (alive) setTaskResults([]);
-      })
-      .finally(() => {
-        if (alive) setIsSearchingTasks(false);
-      });
-
-    return () => {
-      alive = false;
-    };
-  }, [debouncedSearch, fetchApi]);
-
-  // close the dropdown on outside click
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
-      ) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const goToTasks = (query: string) => {
-    const trimmed = query.trim();
-    router.push(
-      trimmed ? `/tasks?search=${encodeURIComponent(trimmed)}` : "/tasks",
-    );
-    setIsOpen(false);
-  };
-
-  const goToProject = (projectId: number) => {
-    router.push(`/projects/${projectId}`);
-    setIsOpen(false);
-  };
-
-  const hasResults = matchingProjects.length > 0 || taskResults.length > 0;
-  const showDropdown = isOpen && debouncedSearch !== "";
 
   return (
-    <header className="border-b">
+    <header className="border-b md:z-50">
       <div className="flex h-14 items-center gap-2 px-3 sm:h-16 sm:gap-4 sm:px-6 fixed top-0 w-full bg-background pl-10 md:pl-6">
         <div className="flex items-center gap-2">
           <Layout className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 dark:text-blue-400" />
@@ -118,8 +22,9 @@ const DashboardHeader = () => {
             TaskBoard
           </span>
         </div>
+        <Search className="w-56 hidden sm:block" />
         {/* Search: hidden on mobile, visible from sm up */}
-        <div ref={containerRef} className="w-full relative hidden sm:block">
+        {/* <div ref={containerRef} className="w-full relative hidden sm:block">
           <Input
             placeholder="Search tasks and projects..."
             className="max-w-sm px-4 py-2"
@@ -206,7 +111,7 @@ const DashboardHeader = () => {
               )}
             </div>
           )}
-        </div>
+        </div> */}
 
         <div className="ml-auto flex items-center gap-1 sm:gap-4">
           <ThemeToggle />
