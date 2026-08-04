@@ -1,27 +1,31 @@
 "use client";
 
 import { useProject } from "@/context/ProjectContext";
+import { useKeyboardShortcut } from "@/hooks/useKeyboardShortcut";
 import TaskType from "@/lib/types/task";
+import { cn } from "@/lib/utils";
 import { useApi } from "@/utilities/api";
-import { ListChecks, Loader2 } from "lucide-react";
+import { ListChecks, Loader2, Search, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Input } from "./UI/input";
-import { cn } from "@/lib/utils";
+import { Button } from "./UI/button";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "./UI/input-group";
 
 const MAX_RESULTS = 5;
 
-const Search = ({ className = "" }: { className?: string }) => {
+const GlobalSearch = ({ className = "" }: { className?: string }) => {
   const { projects } = useProject();
   const fetchApi = useApi();
   const router = useRouter();
 
   const [search, setSearch] = useState<string>("");
+  const [isFocused, setIsFocued] = useState<boolean>(false);
   const [debouncedSearch, setDebouncedSearch] = useState<string>("");
   const [taskResults, setTaskResults] = useState<TaskType[]>([]);
   const [isSearchingTasks, setIsSearchingTasks] = useState<boolean>(false);
   const [isOpen, setIsOpen] = useState<boolean>(false);
 
+  const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const goToTasks = (query: string) => {
@@ -88,27 +92,78 @@ const Search = ({ className = "" }: { className?: string }) => {
   const hasResults = matchingProjects.length > 0 || taskResults.length > 0;
   const showDropdown = isOpen && debouncedSearch !== "";
 
+  const clear = () => {
+    setSearch("");
+  };
+
+  useKeyboardShortcut({
+    key: "/",
+    callback: () => {
+      inputRef.current?.focus();
+    },
+  });
+
+  useKeyboardShortcut({
+    key: "escape",
+    callback: () => {
+      inputRef.current?.blur();
+    },
+  });
+
   return (
     <div ref={containerRef} className={cn("relative", className)}>
-      <Input
-        placeholder="Search tasks and projects..."
-        className="max-w-sm px-4 py-2"
-        value={search}
-        onChange={(e) => {
-          setSearch(e.target.value);
-          setIsOpen(true);
-        }}
-        onFocus={() => setIsOpen(true)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            goToTasks(search);
-          } else if (e.key === "Escape") {
+      <InputGroup className="min-w-64">
+        <InputGroupInput
+          placeholder="Search tasks and projects..."
+          ref={inputRef}
+          className="max-w-sm px-4 py-2 pl-4 border-0 focus-visible:ring-0 dark:bg-transparent"
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setIsOpen(true);
+          }}
+          onFocus={() => {
+            setIsOpen(true);
+            setIsFocued(true);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              goToTasks(search);
+            } else if (e.key === "Escape") {
+              setIsOpen(false);
+            }
+          }}
+          onBlur={() => {
             setIsOpen(false);
-          }
-        }}
-        onBlur={() => setIsOpen(false)}
-      />
+            setIsFocued(false);
+          }}
+        />
+        <InputGroupAddon align="inline-start">
+          <Search className="h-4 w-4 text-muted-foreground" />
+        </InputGroupAddon>
+        <InputGroupAddon align="inline-end" className="hidden sm:block">
+          {!isFocused && (
+            <kbd className="inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
+              <span className="text-xs">/</span>
+            </kbd>
+          )}
+        </InputGroupAddon>
+        {isFocused && (
+          <InputGroupAddon align="inline-end">
+            <Button
+              variant="ghost"
+              size="sm"
+              onMouseDown={(e) => {
+                e.preventDefault(); // keep input focused
+                clear();
+              }}
+            >
+              <X />
+            </Button>
+          </InputGroupAddon>
+        )}
+      </InputGroup>
 
       {showDropdown && (
         <div className="absolute top-full left-0 z-100 mt-1 w-80 max-w-sm rounded-lg border bg-popover p-1.5 text-sm text-popover-foreground shadow-md ring-1 ring-foreground/10">
@@ -181,4 +236,4 @@ const Search = ({ className = "" }: { className?: string }) => {
   );
 };
 
-export default Search;
+export default GlobalSearch;
