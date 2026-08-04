@@ -14,6 +14,7 @@ import { useAuth } from "./AuthContext";
 
 type NotificationContextType = {
   notifications: NotificationType[];
+  isLoading: boolean;
   notify: (
     title: string,
     message: string,
@@ -35,8 +36,7 @@ export const NotificationProvider = ({
   const { user, authLoading } = useAuth();
 
   const [notifications, setNotifications] = useState<NotificationType[]>([]);
-  //   const [notificationsLoading, setNotificationsLoading] =
-  //     useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const notificationsLoading = useRef<boolean>(false);
 
   const fetchApi = useApi();
@@ -66,6 +66,7 @@ export const NotificationProvider = ({
     if (authLoading || !user?.user_id || notificationsLoading.current) return;
 
     notificationsLoading.current = true;
+    setIsLoading(true);
 
     try {
       const data: { success: boolean; data: NotificationType[] } =
@@ -74,6 +75,7 @@ export const NotificationProvider = ({
       setNotifications(data.data || []);
     } finally {
       notificationsLoading.current = false;
+      setIsLoading(false);
     }
   }, [authLoading, fetchApi, user?.user_id]);
 
@@ -93,7 +95,7 @@ export const NotificationProvider = ({
 
   return (
     <NotificationContext.Provider
-      value={{ notifications, notify, loadNotifications }}
+      value={{ notifications, isLoading, notify, loadNotifications }}
     >
       {children}
     </NotificationContext.Provider>

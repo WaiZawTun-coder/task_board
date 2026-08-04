@@ -70,21 +70,6 @@ function isActivePath(pathname: string | null, href: string) {
   return pathname === href || (pathname?.startsWith(`${href}/`) ?? false);
 }
 
-function NavSkeleton({ collapsed }: { collapsed: boolean }) {
-  return (
-    <ul className="space-y-2" aria-hidden="true">
-      {Array.from({ length: 4 }).map((_, i) => (
-        <li key={i} className="flex items-center gap-3 rounded-lg px-3 py-2">
-          <div className="h-5 w-5 shrink-0 animate-pulse rounded bg-muted" />
-          {!collapsed && (
-            <div className="h-4 flex-1 animate-pulse rounded bg-muted" />
-          )}
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 function ProjectsSkeleton({ collapsed }: { collapsed: boolean }) {
   return (
     <ul className="space-y-2" aria-hidden="true">
@@ -360,9 +345,7 @@ function ProjectsSection({
 const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [hydrated, setHydrated] = useState(false);
-  // const [projectsLoading, setProjectsLoading] = useState(true);
 
   const { projects, createProject, isProjectsLoading } = useProject();
 
@@ -381,12 +364,6 @@ const Sidebar = () => {
     if (!hydrated) return;
     window.localStorage.setItem(COLLAPSE_STORAGE_KEY, String(collapsed));
   }, [collapsed, hydrated]);
-
-  // Simulated fetch — swap for a real permissions/nav-items request.
-  useEffect(() => {
-    const timeout = setTimeout(() => setLoading(false), 500);
-    return () => clearTimeout(timeout);
-  }, []);
 
   const handleAddProject = useCallback(
     async ({
@@ -420,11 +397,7 @@ const Sidebar = () => {
 
   const sidebarBody = (collapsed: boolean, onNavigate?: () => void) => (
     <>
-      {loading ? (
-        <NavSkeleton collapsed={collapsed} />
-      ) : (
-        <NavLinks collapsed={collapsed} onNavigate={onNavigate} />
-      )}
+      <NavLinks collapsed={collapsed} onNavigate={onNavigate} />
 
       <ProjectsSection
         collapsed={collapsed}

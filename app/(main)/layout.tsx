@@ -1,5 +1,6 @@
 "use client";
 
+import AuthLoadingSkeleton from "@/components/dashboard/auth-loading-skeleton";
 import DashboardHeader from "@/components/dashboard/dashboard-header";
 import Sidebar from "@/components/sidebar";
 import { useAuth } from "@/context/AuthContext";
@@ -13,14 +14,10 @@ export default function MainLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const { authLoading, user } = useAuth();
+  const { user } = useAuth();
 
-  if (authLoading && !user) {
-    return (
-      <div className="mx-auto my-auto bg-red-500">
-        Authentication Loading...
-      </div>
-    );
+  if (!user) {
+    return <AuthLoadingSkeleton />;
   }
 
   return (

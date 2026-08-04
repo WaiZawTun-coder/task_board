@@ -15,6 +15,7 @@ import { useAuth } from "./AuthContext";
 
 type TaskContextType = {
   tasks: TaskType[];
+  isLoading: boolean;
   createTask: ({
     title,
     description,
@@ -57,6 +58,7 @@ export const useTask = () => useContext(TaskContext) as TaskContextType;
 
 export const TaskProvider = ({ children }: { children: React.ReactNode }) => {
   const [tasks, setTasks] = useState<TaskType[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const pathname = usePathname();
   const { user, authLoading } = useAuth();
   const taskLoading = useRef<boolean>(false);
@@ -66,12 +68,13 @@ export const TaskProvider = ({ children }: { children: React.ReactNode }) => {
   const isInitialized = useRef<boolean>(false);
 
   const loadTasks = useCallback(async () => {
-    if (authLoading || !user?.user_id) {
+    if (authLoading || !user?.user_id || taskLoading.current) {
       return;
     }
 
     // set loading flag true at start
     taskLoading.current = true;
+    setIsLoading(true);
 
     // get logged in user id
     const user_id = user.user_id;
@@ -88,6 +91,7 @@ export const TaskProvider = ({ children }: { children: React.ReactNode }) => {
     } finally {
       // set loading flag false on finish
       taskLoading.current = false;
+      setIsLoading(false);
     }
   }, [authLoading, user?.user_id, fetchApi]);
 
@@ -234,7 +238,9 @@ export const TaskProvider = ({ children }: { children: React.ReactNode }) => {
   }, [authLoading, user?.user_id, loadTasks, pathname]);
 
   return (
-    <TaskContext.Provider value={{ tasks, createTask, updateTask, deleteTask }}>
+    <TaskContext.Provider
+      value={{ tasks, isLoading, createTask, updateTask, deleteTask }}
+    >
       {children}
     </TaskContext.Provider>
   );
