@@ -40,8 +40,7 @@ export default function CalendarPage() {
     const gridStart = startOfWeek(startOfMonth(month));
     const gridEnd = endOfWeek(endOfMonth(month));
     void loadRange(gridStart, gridEnd);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [month, authLoading, user?.user_id]);
+  }, [month, authLoading, user?.user_id, loadRange]);
 
   const selectedTasks = useMemo(
     () =>

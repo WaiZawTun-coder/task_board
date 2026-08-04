@@ -76,8 +76,6 @@ const NewTask = ({
     setFormData((prev) => ({ ...prev, [key]: value }));
   };
 
-  // Merge a new date while preserving whatever time was already set
-  // (defaults to 09:00 the first time a date is picked).
   const handleDateSelect = (newDate: Date | undefined) => {
     if (!newDate) {
       handleChange("due", undefined);

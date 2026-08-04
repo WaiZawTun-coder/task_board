@@ -155,7 +155,7 @@ const GlobalSearch = ({ className = "" }: { className?: string }) => {
               variant="ghost"
               size="sm"
               onMouseDown={(e) => {
-                e.preventDefault(); // keep input focused
+                e.preventDefault();
                 clear();
               }}
             >

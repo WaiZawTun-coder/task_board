@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, FolderKanban } from "lucide-react";
 
@@ -62,8 +62,7 @@ export default function ProjectDetailPage() {
   useEffect(() => {
     if (!isValidId) return;
     void loadProject(projectId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectId, isValidId]);
+  }, [projectId, isValidId, loadProject]);
 
   useEffect(() => {
     const id = setTimeout(() => setDebouncedSearch(search.trim()), 400);
@@ -71,25 +70,38 @@ export default function ProjectDetailPage() {
   }, [search]);
 
   useEffect(() => {
-    setPage(1);
+    const id = setTimeout(() => setPage(1));
+
+    clearTimeout(id);
   }, [debouncedSearch, status, priorities, sort]);
 
-  const runTasksQuery = () =>
-    fetchTasks({
-      project_id: projectId,
-      search: debouncedSearch,
-      status,
-      priorities,
-      sort,
-      page,
-      limit: PAGE_SIZE,
-    });
+  const runTasksQuery = useCallback(
+    () =>
+      fetchTasks({
+        project_id: projectId,
+        search: debouncedSearch,
+        status,
+        priorities,
+        sort,
+        page,
+        limit: PAGE_SIZE,
+      }),
+    [debouncedSearch, fetchTasks, page, priorities, projectId, sort, status],
+  );
 
   useEffect(() => {
     if (!isValidId) return;
     void runTasksQuery();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectId, isValidId, debouncedSearch, status, priorities, sort, page]);
+  }, [
+    projectId,
+    isValidId,
+    debouncedSearch,
+    status,
+    priorities,
+    sort,
+    page,
+    runTasksQuery,
+  ]);
 
   const refreshAll = async () => {
     await Promise.all([loadProject(projectId), runTasksQuery()]);

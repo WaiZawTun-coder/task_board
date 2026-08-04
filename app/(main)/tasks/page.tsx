@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight, ListChecks } from "lucide-react";
 
@@ -54,7 +54,11 @@ export default function AllTasksPage() {
   // keep the search box in sync if the user comes from the header search
   // again while already on this page (client-side navigation won't remount)
   useEffect(() => {
-    setSearch(searchParams.get("search")?.trim() ?? "");
+    const id = setTimeout(() =>
+      setSearch(searchParams.get("search")?.trim() ?? ""),
+    );
+
+    clearTimeout(id);
   }, [searchParams]);
 
   // debounce the raw search input so we don't hit the API on every keystroke
@@ -65,24 +69,28 @@ export default function AllTasksPage() {
 
   // any filter change should jump back to page 1
   useEffect(() => {
-    setPage(1);
+    const id = setTimeout(() => setPage(1));
+
+    clearTimeout(id);
   }, [debouncedSearch, status, priorities, projectId, sort]);
 
-  const runQuery = () =>
-    fetchTasks({
-      search: debouncedSearch,
-      status,
-      priorities,
-      project_id: projectId,
-      sort,
-      page,
-      limit: PAGE_SIZE,
-    });
+  const runQuery = useCallback(
+    () =>
+      fetchTasks({
+        search: debouncedSearch,
+        status,
+        priorities,
+        project_id: projectId,
+        sort,
+        page,
+        limit: PAGE_SIZE,
+      }),
+    [debouncedSearch, fetchTasks, page, priorities, projectId, sort, status],
+  );
 
   useEffect(() => {
     void runQuery();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearch, status, priorities, projectId, sort, page]);
+  }, [debouncedSearch, status, priorities, projectId, sort, page, runQuery]);
 
   const handleStatusChange = async (
     task: TaskType,

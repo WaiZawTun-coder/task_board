@@ -14,10 +14,6 @@ export function ThemeToggle() {
     return () => clearTimeout(timeout);
   }, []);
 
-  // useEffect(() => {
-  //   console.log({ theme });
-  // }, [theme]);
-
   if (!mounted) {
     return <div className="w-9 h-9"></div>;
   }

@@ -69,11 +69,7 @@ export const AnalyticsProvider = ({
 
     isInitialized.current = true;
 
-    // const id = setTimeout(() => {
     void refreshAnalytics();
-    // }, 0);
-
-    // return () => clearTimeout(id);
   }, [authLoading, user?.user_id, refreshAnalytics]);
 
   // keep in sync with task mutations fired anywhere in the app

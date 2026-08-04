@@ -242,7 +242,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (!alive || !token) return;
 
         await getUser({ newToken: token });
-        // await getUser(token);
       } catch {
         if (!alive) return;
         setAccessToken(null);
