@@ -33,7 +33,6 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Task Board",
     description: "A place to organize projects and tasks",
-    // images: ["/profile.jpg"],
   },
 };
 
