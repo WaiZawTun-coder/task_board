@@ -1,7 +1,7 @@
 "use client";
 
 import { CalendarIcon, Loader2, Plus } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/UI/button";
 import {
@@ -15,12 +15,10 @@ import {
 } from "@/components/UI/dialog";
 import { Input } from "@/components/UI/input";
 import { Textarea } from "@/components/UI/textarea";
+import { useProject } from "@/context/ProjectContext";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Calendar } from "./UI/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "./UI/popover";
-import { TimePicker } from "./time-picker";
-import { useProject } from "@/context/ProjectContext";
 import {
   Combobox,
   ComboboxContent,
@@ -29,7 +27,8 @@ import {
   ComboboxItem,
   ComboboxList,
 } from "./UI/combobox";
-import NewProject from "./newProject";
+import { Popover, PopoverContent, PopoverTrigger } from "./UI/popover";
+import { TimePicker } from "./time-picker";
 
 type NewTaskFormData = {
   title: string;
@@ -53,6 +52,7 @@ type NewTaskProps = {
   triggerVariant?: React.ComponentProps<typeof Button>["variant"];
   triggerSize?: React.ComponentProps<typeof Button>["size"];
   className?: string;
+  selectedProject?: number | undefined;
 };
 
 const NewTask = ({
@@ -61,6 +61,7 @@ const NewTask = ({
   triggerVariant = "default",
   triggerSize = "lg",
   className,
+  selectedProject = undefined,
 }: NewTaskProps) => {
   const { projects, isProjectsLoading } = useProject();
   const [open, setOpen] = useState(false);
@@ -130,6 +131,12 @@ const NewTask = ({
     }
   };
 
+  useEffect(() => {
+    if (selectedProject) {
+      setFormData((prev) => ({ ...prev, project_id: selectedProject }));
+    }
+  }, [selectedProject]);
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <Button
@@ -182,6 +189,13 @@ const NewTask = ({
               Project
             </label>
             <Combobox
+              value={
+                selectedProject
+                  ? projects.filter(
+                      (project) => project.project_id === selectedProject,
+                    )[0]?.title
+                  : undefined
+              }
               items={projects.map((project) => project.title)}
               onValueChange={(item) =>
                 handleChange(

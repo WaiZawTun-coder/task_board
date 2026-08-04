@@ -215,7 +215,11 @@ export default function ProjectDetailPage() {
               : `${pagination.total} task${pagination.total === 1 ? "" : "s"} in this project`}
           </p>
         </div>
-        <NewTask onCreate={handleCreateTask} triggerLabel="New Task" />
+        <NewTask
+          onCreate={handleCreateTask}
+          triggerLabel="New Task"
+          selectedProject={projectId}
+        />
       </div>
 
       <ProjectTaskFilters

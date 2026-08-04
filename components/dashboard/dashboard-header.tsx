@@ -7,8 +7,13 @@ import Search from "../search";
 import { ThemeToggle } from "../themeToggler";
 import NotificationHeader from "./notification-header";
 import ProfileHeader from "./profile-header";
+import { useParams } from "next/navigation";
 
 const DashboardHeader = () => {
+  const params = useParams<{ projectId: string }>();
+  const projectId = Number(params.projectId);
+  const isValidId = Number.isInteger(projectId) && projectId > 0;
+
   const { createTask } = useTask();
 
   // debounce the raw input before filtering projects / hitting the tasks API
@@ -116,7 +121,10 @@ const DashboardHeader = () => {
         <div className="ml-auto flex items-center gap-1 sm:gap-4">
           <ThemeToggle />
 
-          <NewTask onCreate={createTask} />
+          <NewTask
+            onCreate={createTask}
+            selectedProject={isValidId ? projectId : undefined}
+          />
 
           <NotificationHeader />
           <ProfileHeader />
