@@ -27,6 +27,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Task Board",
   description: "A place to organize projects and tasks",
+  icons: {
+    icon: "/icon.ico",
+  },
   openGraph: {
     title: "Task Board",
     description: "A place to organize projects and tasks",

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight, ListChecks } from "lucide-react";
 
 import NewTask from "@/components/newTask";
@@ -20,12 +21,16 @@ import TaskType from "@/lib/types/task";
 const PAGE_SIZE = 10;
 
 export default function AllTasksPage() {
+  const searchParams = useSearchParams();
+
   const { createTask, updateTask, deleteTask } = useTask();
   const { projects } = useProject();
   const { tasks, pagination, isLoading, fetchTasks } = useTasksQuery();
 
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const initialSearch = searchParams.get("search")?.trim() ?? "";
+
+  const [search, setSearch] = useState(initialSearch);
+  const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
   const [status, setStatus] = useState<StatusFilter>("all");
   const [priorities, setPriorities] = useState<TaskType["priority"][]>([]);
   const [projectId, setProjectId] = useState<number | undefined>(undefined);
@@ -45,6 +50,12 @@ export default function AllTasksPage() {
     setPriorities([]);
     setProjectId(undefined);
   };
+
+  // keep the search box in sync if the user comes from the header search
+  // again while already on this page (client-side navigation won't remount)
+  useEffect(() => {
+    setSearch(searchParams.get("search")?.trim() ?? "");
+  }, [searchParams]);
 
   // debounce the raw search input so we don't hit the API on every keystroke
   useEffect(() => {
