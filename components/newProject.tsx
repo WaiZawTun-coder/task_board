@@ -3,7 +3,7 @@
 import { Loader2, Plus } from "lucide-react";
 import { useId, useState } from "react";
 import { Button } from "./UI/button";
-import { ColorPicker } from "./UI/color-picker";
+import dynamic from "next/dynamic";
 import {
   Dialog,
   DialogClose,
@@ -15,6 +15,11 @@ import {
 } from "./UI/dialog";
 import { Input } from "./UI/input";
 import { Textarea } from "./UI/textarea";
+
+const ColorPicker = dynamic(
+  () => import("@/components/UI/color-picker").then((m) => m.ColorPicker),
+  { ssr: false },
+);
 
 type NewProjectFormData = {
   title: string;

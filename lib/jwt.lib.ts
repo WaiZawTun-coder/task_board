@@ -1,8 +1,12 @@
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { pool } from "./db.lib";
 import { comparePassword, hashPassword } from "./hash.lib";
+import { createHash } from "crypto";
 
 const JWT_SECRET = process.env.JWT_SECRET || "supersecret";
+
+const hashToken = (token: string): string =>
+  createHash("sha256").update(token).digest("hex");
 
 const DEFAULT_EXPIRE_TIME = "3h";
 
@@ -73,16 +77,13 @@ export const storeRefreshToken = async (
   token: string,
   expiresAt: Date,
 ): Promise<void> => {
-  // Hash the refresh token
-  const hashRefreshToken = await hashPassword(token);
+  const hashRefreshToken = hashToken(token);
 
-  // revoke all previous keys
   const revokeAllKeysQuery =
     "UPDATE refresh_tokens SET revoked = true WHERE user_id = $1 AND revoked = false";
 
   await pool.query(revokeAllKeysQuery, [userId]);
 
-  // store in database
   const storeRefreshTokenQuery =
     "INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES ($1, $2, $3)";
 
@@ -95,10 +96,8 @@ export const storeRefreshToken = async (
 
 // reterive the hashed value of the provided token from database
 export const getHashedToken = async (token: string): Promise<string> => {
-  // Verify the token to get the user_id
   const payload = verifyToken(token) as JwtPayload;
 
-  // Ensure payload is an object and contains user_id
   if (typeof payload === "string") {
     throw new Error("Invalid token payload");
   }
@@ -107,24 +106,16 @@ export const getHashedToken = async (token: string): Promise<string> => {
     throw new Error("Invalid token payload: missing user_id");
   }
 
-  // Retrieve all valid refresh tokens for the user
-  const tokens = await getAllRefreshTokens(payload.user_id);
+  const hashed = hashToken(token);
 
-  // Compare the provided token with the stored hashed tokens
-  for (const row of tokens) {
-    const storedToken = row;
-    try {
-      const isMatch = await comparePassword(token, storedToken.token);
+  const result = await pool.query(
+    "SELECT token FROM refresh_tokens WHERE user_id = $1 AND token = $2 AND revoked = false AND expires_at > NOW()",
+    [payload.user_id, hashed],
+  );
 
-      if (isMatch) {
-        // return the stored hashed token
-        return storedToken.token;
-      }
-    } catch {
-      throw new Error("Error comparing tokens");
-    }
+  if (result.rowCount === 0) {
+    throw new Error("No matching refresh token found");
   }
 
-  // If no matching token is found, throw an error
-  throw new Error("No matching refresh token found");
+  return result.rows[0].token;
 };

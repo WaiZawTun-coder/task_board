@@ -4,11 +4,10 @@ import { queryKeys } from "@/lib/query-keys";
 import TaskType from "@/lib/types/task";
 import { useApi } from "@/utilities/api";
 import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@/context/AuthContext";
 
 type TaskStatus = TaskType["status"];
 
-type DashboardData = {
+export type DashboardData = {
   columns: Record<TaskStatus, TaskType[]>;
   counts: Record<TaskStatus, number>;
   stats: { total: number; overdue: number };
@@ -27,7 +26,6 @@ const EMPTY_DASHBOARD: DashboardData = {
 };
 
 export function useDashboardQuery() {
-  const { user, authLoading } = useAuth();
   const fetchApi = useApi();
 
   const query = useQuery({
@@ -38,7 +36,7 @@ export function useDashboardQuery() {
           "/api/protected/dashboard",
         )
       ).data,
-    enabled: !authLoading && !!user?.user_id,
+    enabled: true,
   });
 
   return {

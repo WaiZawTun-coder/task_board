@@ -44,8 +44,6 @@ export const NotificationProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
-  const { user, authLoading } = useAuth();
-
   const [notifications, setNotifications] = useState<NotificationType[]>([]);
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -78,7 +76,7 @@ export const NotificationProvider = ({
   };
 
   const loadNotifications = useCallback(async () => {
-    if (authLoading || !user?.user_id || notificationsLoading.current) return;
+    if (notificationsLoading.current) return;
 
     notificationsLoading.current = true;
     setIsLoading(true);
@@ -98,7 +96,7 @@ export const NotificationProvider = ({
       notificationsLoading.current = false;
       setIsLoading(false);
     }
-  }, [authLoading, fetchApi, user?.user_id]);
+  }, [fetchApi]);
 
   const markAsRead = async (
     notification: NotificationType,
@@ -218,7 +216,7 @@ export const NotificationProvider = ({
   };
 
   useEffect(() => {
-    if (authLoading || !user?.user_id || isInitialized.current) return;
+    if (isInitialized.current) return;
 
     isInitialized.current = true;
 
@@ -227,19 +225,17 @@ export const NotificationProvider = ({
     }, 0);
 
     return () => clearTimeout(id);
-  }, [authLoading, user?.user_id, loadNotifications]);
+  }, [loadNotifications]);
 
   // periodic refresh so DB-side automation (triggers / scheduled jobs)
   // shows up without requiring a client-side task mutation first
   useEffect(() => {
-    if (authLoading || !user?.user_id) return;
-
     const interval = setInterval(() => {
       void loadNotifications();
     }, POLL_INTERVAL_MS);
 
     return () => clearInterval(interval);
-  }, [authLoading, user?.user_id, loadNotifications]);
+  }, [loadNotifications]);
 
   return (
     <NotificationContext.Provider

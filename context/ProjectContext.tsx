@@ -130,10 +130,6 @@ export const ProjectProvider = ({
     status: "active" | "archived" | "completed";
     color_hex?: string;
   }): Promise<{ success: boolean; message?: string }> => {
-    if (authLoading || !user?.user_id) {
-      return { success: false, message: "No logged in user detected" };
-    }
-
     try {
       const body = {
         project_id,
@@ -180,10 +176,6 @@ export const ProjectProvider = ({
   }: {
     project_id: number;
   }): Promise<{ success: boolean; message?: string }> => {
-    if (authLoading || !user?.user_id) {
-      return { success: false, message: "No logged in user detected" };
-    }
-
     try {
       const data: { success: boolean; message?: string } = await fetchApi(
         "/api/protected/project",
@@ -203,10 +195,8 @@ export const ProjectProvider = ({
   };
 
   useEffect(() => {
-    if (authLoading || !user?.user_id) return;
-
     void getProjects();
-  }, [authLoading, getProjects, user?.user_id]);
+  }, [getProjects]);
 
   return (
     <ProjectContext.Provider

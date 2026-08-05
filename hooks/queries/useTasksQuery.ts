@@ -3,7 +3,6 @@
 import { queryKeys } from "@/lib/query-keys";
 import TaskType from "@/lib/types/task";
 import { useApi } from "@/utilities/api";
-import { useAuth } from "@/context/AuthContext";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 export type TasksQueryParams = {
@@ -16,14 +15,14 @@ export type TasksQueryParams = {
   limit?: number;
 };
 
-type Pagination = {
+export type Pagination = {
   page: number;
   limit: number;
   total: number;
   totalPages: number;
 };
 
-type TasksQueryResponse = {
+export type TasksQueryResponse = {
   success: boolean;
   data: TaskType[];
   pagination: Pagination;
@@ -56,7 +55,6 @@ const buildQueryString = (params: TasksQueryParams) => {
 };
 
 export function useTasksQuery(params: TasksQueryParams) {
-  const { user, authLoading } = useAuth();
   const fetchApi = useApi();
 
   const query = useQuery({
@@ -65,7 +63,7 @@ export function useTasksQuery(params: TasksQueryParams) {
       fetchApi<TasksQueryResponse>(
         `/api/protected/tasks?${buildQueryString(params)}`,
       ),
-    enabled: !authLoading && !!user?.user_id,
+    enabled: true,
     placeholderData: keepPreviousData,
   });
 

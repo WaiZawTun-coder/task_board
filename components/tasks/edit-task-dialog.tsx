@@ -5,7 +5,6 @@ import { format } from "date-fns";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/UI/button";
-import { Calendar } from "@/components/UI/calendar";
 import {
   Dialog,
   DialogClose,
@@ -32,6 +31,12 @@ import { Textarea } from "@/components/UI/textarea";
 import { TimePicker } from "@/components/time-picker";
 import { cn } from "@/lib/utils";
 import TaskType from "@/lib/types/task";
+import dynamic from "next/dynamic";
+
+const Calendar = dynamic(
+  () => import("@/components/UI/calendar").then((m) => m.Calendar),
+  { ssr: false },
+);
 
 const STATUS_LABELS: Record<TaskType["status"], string> = {
   pending: "To Do",

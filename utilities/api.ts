@@ -15,8 +15,6 @@ export const useApi = () => {
         retry: boolean,
         token = accessToken,
       ): Promise<T> => {
-        if (authLoading) throw new Error("Authentication is still loading");
-
         const isFormData = options.body instanceof FormData;
         const isString = typeof options.body === "string";
 
@@ -64,7 +62,7 @@ export const useApi = () => {
 
       return request(true);
     },
-    [authLoading, accessToken, refresh, logout],
+    [accessToken, refresh, logout],
   );
   return apiFetch;
 };

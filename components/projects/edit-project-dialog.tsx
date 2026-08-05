@@ -4,7 +4,6 @@ import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/UI/button";
-import { ColorPicker } from "@/components/UI/color-picker";
 import {
   Dialog,
   DialogClose,
@@ -29,6 +28,12 @@ import {
 } from "@/lib/project-config";
 import ProjectType from "@/lib/types/project";
 import { cn } from "@/lib/utils";
+import dynamic from "next/dynamic";
+
+const ColorPicker = dynamic(
+  () => import("@/components/UI/color-picker").then((m) => m.ColorPicker),
+  { ssr: false },
+);
 
 type EditProjectFormData = {
   title: string;

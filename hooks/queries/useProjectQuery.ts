@@ -1,6 +1,5 @@
 "use client";
 
-import { useAuth } from "@/context/AuthContext";
 import { queryKeys } from "@/lib/query-keys";
 import { ProjectDetail } from "@/lib/types/project";
 import { useApi } from "@/utilities/api";
@@ -39,7 +38,6 @@ const buildQueryString = (params: ProjectQueryParams) => {
 };
 
 export function useProjectQuery(params: ProjectQueryParams) {
-  const { user, authLoading } = useAuth();
   const fetchApi = useApi();
 
   const query = useQuery({
@@ -50,7 +48,7 @@ export function useProjectQuery(params: ProjectQueryParams) {
           `/api/protected/project?${buildQueryString(params)}`,
         )
       ).data,
-    enabled: !authLoading && !!user?.user_id,
+    enabled: true,
     placeholderData: keepPreviousData,
   });
 

@@ -4,7 +4,6 @@ import { queryKeys } from "@/lib/query-keys";
 import TaskType from "@/lib/types/task";
 import { useApi } from "@/utilities/api";
 import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@/context/AuthContext";
 
 type TodayStats = {
   today_total: number;
@@ -24,13 +23,12 @@ const EMPTY_STATS: TodayStats = {
 };
 
 export function useTodayQuery() {
-  const { user, authLoading } = useAuth();
   const fetchApi = useApi();
 
   const query = useQuery({
     queryKey: queryKeys.today,
     queryFn: () => fetchApi<TodayResponse>("/api/protected/today"),
-    enabled: !authLoading && !!user?.user_id,
+    enabled: true,
   });
 
   const today = query.data?.data.today ?? [];

@@ -1,6 +1,5 @@
 "use client";
 
-import { useAuth } from "@/context/AuthContext";
 import { queryKeys } from "@/lib/query-keys";
 import { AnalyticsData } from "@/lib/types/analytics";
 import { useApi } from "@/utilities/api";
@@ -15,7 +14,6 @@ const EMPTY_ANALYTICS: AnalyticsData = {
 };
 
 export function useAnalyticsQuery() {
-  const { user, authLoading } = useAuth();
   const fetchApi = useApi();
 
   const query = useQuery({
@@ -26,7 +24,7 @@ export function useAnalyticsQuery() {
           "/api/protected/analytics",
         )
       ).data,
-    enabled: !authLoading && !!user?.user_id,
+    enabled: true,
   });
 
   return {

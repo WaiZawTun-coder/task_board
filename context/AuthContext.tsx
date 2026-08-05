@@ -180,6 +180,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     [],
   );
 
+  // AFTER
   const refresh = useCallback((): Promise<string> => {
     if (refreshRequest) return refreshRequest;
 
@@ -204,6 +205,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         );
 
       setAccessToken(data.data.token);
+      // refresh now returns user info directly — no second /user call needed
+      setUser({
+        user_id: data.data.user_id,
+        username: data.data.username,
+        email: data.data.email,
+        exp: 0,
+        iat: 0,
+      });
       return data.data.token;
     })();
 
@@ -230,6 +239,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     [],
   );
 
+  // AFTER
   useEffect(() => {
     if (isInitialized.current) return;
     isInitialized.current = true;
@@ -238,10 +248,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     (async () => {
       try {
-        const token = await refresh();
-        if (!alive || !token) return;
-
-        await getUser({ newToken: token });
+        await refresh();
       } catch {
         if (!alive) return;
         setAccessToken(null);
@@ -256,7 +263,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => {
       alive = false;
     };
-  }, [getUser, refresh, router, pathname]);
+  }, [refresh, router, pathname]);
 
   return (
     <AuthContext.Provider

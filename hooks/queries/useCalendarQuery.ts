@@ -3,7 +3,6 @@
 import { queryKeys } from "@/lib/query-keys";
 import TaskType from "@/lib/types/task";
 import { useApi } from "@/utilities/api";
-import { useAuth } from "@/context/AuthContext";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 // yyyy-MM-dd using local date parts — matches what CalendarContext did,
@@ -16,7 +15,6 @@ const toDateKey = (date: Date) => {
 };
 
 export function useCalendarQuery(start: Date, end: Date) {
-  const { user, authLoading } = useAuth();
   const fetchApi = useApi();
 
   const startKey = toDateKey(start);
@@ -28,7 +26,7 @@ export function useCalendarQuery(start: Date, end: Date) {
       fetchApi<{ success: boolean; data: TaskType[] }>(
         `/api/protected/calendar?start=${startKey}&end=${endKey}`,
       ),
-    enabled: !authLoading && !!user?.user_id,
+    enabled: true,
     placeholderData: keepPreviousData,
   });
 

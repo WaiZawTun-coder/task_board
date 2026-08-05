@@ -18,7 +18,6 @@ import { Textarea } from "@/components/UI/textarea";
 import { useProject } from "@/context/ProjectContext";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { Calendar } from "./UI/calendar";
 import {
   Combobox,
   ComboboxContent,
@@ -29,6 +28,12 @@ import {
 } from "./UI/combobox";
 import { Popover, PopoverContent, PopoverTrigger } from "./UI/popover";
 import { TimePicker } from "./time-picker";
+import dynamic from "next/dynamic";
+
+const Calendar = dynamic(
+  () => import("@/components/UI/calendar").then((m) => m.Calendar),
+  { ssr: false },
+);
 
 type NewTaskFormData = {
   title: string;

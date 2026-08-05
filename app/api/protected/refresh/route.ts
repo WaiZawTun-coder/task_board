@@ -82,6 +82,9 @@ export async function POST() {
       success: true,
       data: {
         token: newAccessToken,
+        user_id: payload.user_id,
+        username: result.rows[0].username,
+        email: result.rows[0].email,
       },
     });
   } catch (err: unknown) {

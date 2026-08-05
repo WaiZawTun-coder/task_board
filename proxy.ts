@@ -4,11 +4,20 @@ import { ratelimit } from "./lib/rate-limit.lib";
 
 export async function proxy(request: NextRequest) {
   try {
-    const ip = request.headers.get("x-forwarded-for") ?? "127.0.0.1";
-    const { success } = await ratelimit.limit(ip);
+    const isAuthRoute =
+      request.nextUrl.pathname.startsWith("/api/protected/refresh") ||
+      request.nextUrl.pathname.startsWith("/api/protected/logout");
 
-    if (!success) {
-      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    if (isAuthRoute) {
+      const ip = request.headers.get("x-forwarded-for") ?? "127.0.0.1";
+      const { success } = await ratelimit.limit(ip);
+
+      if (!success) {
+        return NextResponse.json(
+          { error: "Too many requests" },
+          { status: 429 },
+        );
+      }
     }
     const token = request.cookies.get("refreshToken")?.value;
 
