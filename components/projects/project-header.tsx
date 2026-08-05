@@ -1,9 +1,9 @@
 import { Pencil, Trash2 } from "lucide-react";
 import { Badge } from "@/components/UI/badge";
 import { Button } from "@/components/UI/button";
-import { ProjectDetail } from "@/hooks/useProjectDetail";
 import { PROJECT_STATUS_CONFIG } from "@/lib/project-config";
 import { cn } from "@/lib/utils";
+import { ProjectDetail } from "@/lib/types/project";
 
 type ProjectHeaderProps = {
   project: ProjectDetail;

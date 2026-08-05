@@ -7,10 +7,10 @@ import { CreationTrendCard } from "@/components/analytics/creation-trend-card";
 import { PriorityBreakdownCard } from "@/components/analytics/priority-breakdown-card";
 import { ProjectBreakdownCard } from "@/components/analytics/project-breakdown-card";
 import { StatusBreakdownCard } from "@/components/analytics/status-breakdown-card";
-import { useAnalytics } from "@/context/AnalyticsContext";
+import { useAnalyticsQuery } from "@/hooks/queries/useAnalyticsQuery";
 
 export default function AnalyticsPage() {
-  const { analytics, isLoading } = useAnalytics();
+  const { analytics, isLoading } = useAnalyticsQuery();
 
   return (
     <div className="min-w-full space-y-6 p-4 sm:p-6">

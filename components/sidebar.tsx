@@ -26,12 +26,12 @@ import {
   SheetTitle,
 } from "@/components/UI/sheet";
 import { useProject } from "@/context/ProjectContext";
-import { useToday } from "@/context/TodayContext";
 import ProjectType from "@/lib/types/project";
 import { cn } from "@/lib/utils";
 import NewProject from "./newProject";
 import Search from "./search";
 import { useNotification } from "@/context/NotificationContext";
+import { useTodayQuery } from "@/hooks/queries/useTodayQuery";
 
 type NavChild = {
   href: string;
@@ -97,7 +97,7 @@ function NavLinks({
 }) {
   const pathname = usePathname();
   const [expanded, setExpanded] = useState<string | null>(null);
-  const { actionableCount } = useToday();
+  const { actionableCount } = useTodayQuery();
   const { unreadCount } = useNotification();
 
   // Auto-expand a submenu if a child route is currently active.

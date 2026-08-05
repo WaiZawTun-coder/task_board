@@ -1,24 +1,24 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, FolderKanban } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/UI/button";
 import NewTask from "@/components/newTask";
-import { EditTaskDialog } from "@/components/tasks/edit-task-dialog";
-import { TaskList } from "@/components/tasks/task-list";
-import { SortOption, StatusFilter } from "@/components/tasks/task-filters";
 import { DeleteProjectDialog } from "@/components/projects/delete-project-dialog";
 import { EditProjectDialog } from "@/components/projects/edit-project-dialog";
 import { ProjectHeader } from "@/components/projects/project-header";
 import { ProjectProgressBar } from "@/components/projects/project-progress-bar";
 import { ProjectStatsCards } from "@/components/projects/project-stats-cards";
 import { ProjectTaskFilters } from "@/components/projects/project-task-filters";
+import { EditTaskDialog } from "@/components/tasks/edit-task-dialog";
+import { SortOption, StatusFilter } from "@/components/tasks/task-filters";
+import { TaskList } from "@/components/tasks/task-list";
 import { useProject } from "@/context/ProjectContext";
 import { useTask } from "@/context/TaskContext";
-import { useProjectDetail } from "@/hooks/useProjectDetail";
-import { useTasksQuery } from "@/hooks/useTasksQuery";
+import { useProjectQuery } from "@/hooks/queries/useProjectQuery";
+import { useTasksQuery } from "@/hooks/queries/useTasksQuery";
 import TaskType from "@/lib/types/task";
 
 const PAGE_SIZE = 10;
@@ -31,14 +31,6 @@ export default function ProjectDetailPage() {
 
   const { updateProject, deleteProject } = useProject();
   const { createTask, updateTask, deleteTask } = useTask();
-  const { project, isLoading, notFound, error, loadProject } =
-    useProjectDetail();
-  const {
-    tasks,
-    pagination,
-    isLoading: tasksLoading,
-    fetchTasks,
-  } = useTasksQuery();
 
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -50,6 +42,26 @@ export default function ProjectDetailPage() {
   const [editingProject, setEditingProject] = useState(false);
   const [deletingProject, setDeletingProject] = useState(false);
 
+  const { project, isLoading, notFound, error, refetch } = useProjectQuery({
+    projectId: projectId,
+  });
+
+  console.log({ project });
+
+  const {
+    tasks,
+    pagination,
+    isLoading: tasksLoading,
+  } = useTasksQuery({
+    search,
+    status,
+    priorities,
+    project_id: projectId,
+    sort,
+    page,
+    limit: PAGE_SIZE,
+  });
+
   const hasActiveFilters =
     search.trim() !== "" || status !== "all" || priorities.length > 0;
 
@@ -59,10 +71,10 @@ export default function ProjectDetailPage() {
     setPriorities([]);
   };
 
-  useEffect(() => {
-    if (!isValidId) return;
-    void loadProject(projectId);
-  }, [projectId, isValidId, loadProject]);
+  // useEffect(() => {
+  //   if (!isValidId) return;
+  //   void loadProject(projectId);
+  // }, [projectId, isValidId, loadProject]);
 
   useEffect(() => {
     const id = setTimeout(() => setDebouncedSearch(search.trim()), 400);
@@ -75,37 +87,37 @@ export default function ProjectDetailPage() {
     clearTimeout(id);
   }, [debouncedSearch, status, priorities, sort]);
 
-  const runTasksQuery = useCallback(
-    () =>
-      fetchTasks({
-        project_id: projectId,
-        search: debouncedSearch,
-        status,
-        priorities,
-        sort,
-        page,
-        limit: PAGE_SIZE,
-      }),
-    [debouncedSearch, fetchTasks, page, priorities, projectId, sort, status],
-  );
+  // const runTasksQuery = useCallback(
+  //   () =>
+  //     fetchTasks({
+  //       project_id: projectId,
+  //       search: debouncedSearch,
+  //       status,
+  //       priorities,
+  //       sort,
+  //       page,
+  //       limit: PAGE_SIZE,
+  //     }),
+  //   [debouncedSearch, fetchTasks, page, priorities, projectId, sort, status],
+  // );
 
-  useEffect(() => {
-    if (!isValidId) return;
-    void runTasksQuery();
-  }, [
-    projectId,
-    isValidId,
-    debouncedSearch,
-    status,
-    priorities,
-    sort,
-    page,
-    runTasksQuery,
-  ]);
+  // useEffect(() => {
+  //   if (!isValidId) return;
+  //   void runTasksQuery();
+  // }, [
+  //   projectId,
+  //   isValidId,
+  //   debouncedSearch,
+  //   status,
+  //   priorities,
+  //   sort,
+  //   page,
+  //   runTasksQuery,
+  // ]);
 
-  const refreshAll = async () => {
-    await Promise.all([loadProject(projectId), runTasksQuery()]);
-  };
+  // const refreshAll = async () => {
+  //   await Promise.all([loadProject(projectId), runTasksQuery()]);
+  // };
 
   const handleStatusChange = async (
     task: TaskType,
@@ -121,7 +133,7 @@ export default function ProjectDetailPage() {
         status: newStatus,
         priority: task.priority,
       });
-      await refreshAll();
+      // await refreshAll();
     } catch (err) {
       console.error("Failed to update task status", err);
     }
@@ -130,7 +142,7 @@ export default function ProjectDetailPage() {
   const handleDeleteTask = async (task: TaskType) => {
     try {
       await deleteTask({ task_id: task.task_id });
-      await refreshAll();
+      // await refreshAll();
     } catch (err) {
       console.error("Failed to delete task", err);
     }
@@ -141,13 +153,13 @@ export default function ProjectDetailPage() {
     // attached to it, overriding whatever's selected in the dialog's
     // own project picker
     const result = await createTask({ ...data, project_id: projectId });
-    if (result.success) await refreshAll();
+    // if (result.success) await refreshAll();
     return result;
   };
 
   const handleSaveTask = async (data: Parameters<typeof updateTask>[0]) => {
     const result = await updateTask(data);
-    if (result.success) await refreshAll();
+    // if (result.success) await refreshAll();
     return result;
   };
 
@@ -155,7 +167,7 @@ export default function ProjectDetailPage() {
     data: Parameters<typeof updateProject>[0],
   ) => {
     const result = await updateProject(data);
-    if (result.success) await loadProject(projectId);
+    // if (result.success) await loadProject(projectId);
     return result;
   };
 
@@ -166,6 +178,7 @@ export default function ProjectDetailPage() {
   };
 
   if (!isValidId || notFound) {
+    console.log({ notFound: !project });
     return (
       <div className="flex min-w-full flex-col items-center justify-center gap-3 p-12 text-center">
         <FolderKanban className="h-10 w-10 text-muted-foreground" />
@@ -199,7 +212,7 @@ export default function ProjectDetailPage() {
         <p className="text-sm text-destructive">
           {error || "Unable to load this project."}
         </p>
-        <Button variant="outline" onClick={() => loadProject(projectId)}>
+        <Button variant="outline" onClick={refetch}>
           Try again
         </Button>
       </div>

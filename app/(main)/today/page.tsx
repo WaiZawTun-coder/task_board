@@ -9,8 +9,8 @@ import { TodayStats } from "@/components/today/today-stats";
 import { TodayTaskSection } from "@/components/today/today-task-section";
 import { useProject } from "@/context/ProjectContext";
 import { useTask } from "@/context/TaskContext";
-import { useToday } from "@/context/TodayContext";
 import TaskType from "@/lib/types/task";
+import { useTodayQuery } from "@/hooks/queries/useTodayQuery";
 
 const TODAY_LABEL = new Intl.DateTimeFormat("en", {
   weekday: "long",
@@ -21,7 +21,7 @@ const TODAY_LABEL = new Intl.DateTimeFormat("en", {
 export default function TodayPage() {
   const { createTask, updateTask, deleteTask } = useTask();
   const { projects } = useProject();
-  const { today, overdue, stats, isLoading, refreshToday } = useToday();
+  const { today, overdue, stats, isLoading } = useTodayQuery();
 
   const [editingTask, setEditingTask] = useState<TaskType | null>(null);
 
@@ -31,7 +31,8 @@ export default function TodayPage() {
   ) => {
     if (task.status === status) return;
     try {
-      const result = await updateTask({
+      // const result =
+      await updateTask({
         task_id: task.task_id,
         title: task.title,
         description: task.description,
@@ -39,7 +40,7 @@ export default function TodayPage() {
         status,
         priority: task.priority,
       });
-      if (result.success) await refreshToday();
+      // if (result.success) await refreshToday();
     } catch (err) {
       console.error("Failed to update task status", err);
     }
@@ -47,8 +48,9 @@ export default function TodayPage() {
 
   const handleDelete = async (task: TaskType) => {
     try {
-      const result = await deleteTask({ task_id: task.task_id });
-      if (result.success) await refreshToday();
+      // const result =
+      await deleteTask({ task_id: task.task_id });
+      // if (result.success) await refreshToday();
     } catch (err) {
       console.error("Failed to delete task", err);
     }
@@ -56,13 +58,13 @@ export default function TodayPage() {
 
   const handleCreate = async (payload: Parameters<typeof createTask>[0]) => {
     const result = await createTask(payload);
-    if (result.success) await refreshToday();
+    // if (result.success) await refreshToday();
     return result;
   };
 
   const handleSave = async (payload: Parameters<typeof updateTask>[0]) => {
     const result = await updateTask(payload);
-    if (result.success) await refreshToday();
+    // if (result.success) await refreshToday();
     return result;
   };
 

@@ -16,4 +16,6 @@ export type ProjectStats = {
   overdue: number;
 };
 
+export type ProjectDetail = ProjectType & { stats: ProjectStats };
+
 export default ProjectType;

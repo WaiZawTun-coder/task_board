@@ -6,10 +6,10 @@ import { AnalyticsStatCards } from "@/components/analytics/analytics-stat-cards"
 import { OverviewHighlightsCard } from "@/components/analytics/overview-highlights-card";
 import { PriorityBreakdownCard } from "@/components/analytics/priority-breakdown-card";
 import { StatusBreakdownCard } from "@/components/analytics/status-breakdown-card";
-import { useAnalytics } from "@/context/AnalyticsContext";
+import { useAnalyticsQuery } from "@/hooks/queries/useAnalyticsQuery";
 
 export default function AnalyticsOverviewPage() {
-  const { analytics, isLoading } = useAnalytics();
+  const { analytics, isLoading } = useAnalyticsQuery();
 
   return (
     <div className="min-w-full space-y-6 p-4 sm:p-6">

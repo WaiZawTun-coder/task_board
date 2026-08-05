@@ -6,6 +6,7 @@ import { ThemeProvider } from "../providers/themeProvider";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
+import { QueryProvider } from "@/providers/queryProvider";
 
 const dmSansHeading = DM_Sans({
   subsets: ["latin"],
@@ -70,9 +71,11 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen flex flex-col">
-        <AuthProvider>
-          <ThemeProvider>{children}</ThemeProvider>
-        </AuthProvider>
+        <QueryProvider>
+          <AuthProvider>
+            <ThemeProvider>{children}</ThemeProvider>
+          </AuthProvider>
+        </QueryProvider>
         <Analytics />
         <SpeedInsights />
       </body>

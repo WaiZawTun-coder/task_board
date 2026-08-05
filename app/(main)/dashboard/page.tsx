@@ -25,6 +25,9 @@ import { TaskColumn } from "@/components/task-column";
 import { DragDropProvider, DragEndEvent, DragOverlay } from "@dnd-kit/react";
 import { useCallback, useEffect, useState } from "react";
 import { useApi } from "@/utilities/api";
+import { useDashboardQuery } from "@/hooks/queries/useDashboardQuery";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-keys";
 
 type Stat = {
   label: string;
@@ -42,15 +45,6 @@ type DashboardData = {
   upcoming: TaskType[];
   recent: TaskType[];
   projectCounts: Record<string, number>;
-};
-
-const EMPTY_DASHBOARD: DashboardData = {
-  columns: { pending: [], on_going: [], cancel: [], completed: [] },
-  counts: { pending: 0, on_going: 0, cancel: 0, completed: 0 },
-  stats: { total: 0, overdue: 0 },
-  upcoming: [],
-  recent: [],
-  projectCounts: {},
 };
 
 const statusLabels = {
@@ -100,30 +94,10 @@ function StatCard({ label, value, icon: Icon, accent }: Stat) {
 export default function Dashboard() {
   const { createTask, updateTask } = useTask();
   const { projects, isProjectsLoading } = useProject();
-  const fetchApi = useApi();
-  const [dashboard, setDashboard] = useState<DashboardData>(EMPTY_DASHBOARD);
 
-  const loadDashboard = useCallback(async () => {
-    try {
-      const response = await fetchApi<{
-        success: boolean;
-        data: DashboardData;
-      }>("/api/protected/dashboard");
+  const { dashboard } = useDashboardQuery();
 
-      if (response.success) setDashboard(response.data);
-    } catch (error) {
-      console.error("Failed to load dashboard", error);
-    }
-  }, [fetchApi]);
-
-  useEffect(() => {
-    const initialLoad = window.setTimeout(() => void loadDashboard(), 0);
-    window.addEventListener("taskboard:tasks-changed", loadDashboard);
-    return () => {
-      window.clearTimeout(initialLoad);
-      window.removeEventListener("taskboard:tasks-changed", loadDashboard);
-    };
-  }, [loadDashboard]);
+  const queryClient = useQueryClient();
 
   const pendingTasks = dashboard.columns.pending;
   const inProgressTasks = dashboard.columns.on_going;
@@ -139,16 +113,31 @@ export default function Dashboard() {
 
     const newStatus = target.id as TaskType["status"];
     const task = (source?.data as { task?: TaskType } | undefined)?.task;
+
     if (!task || task.status === newStatus) return;
 
-    const previousDashboard = dashboard;
+    const previousStatus = task.status;
 
-    setDashboard((current) => {
-      const previousStatus = task.status;
-      const updatedTask = { ...task, status: newStatus };
+    // Save current cache for rollback
+    const previousDashboard = queryClient.getQueryData<DashboardData>(
+      queryKeys.dashboard,
+    );
+
+    // Optimistic update
+    queryClient.setQueryData<DashboardData>(queryKeys.dashboard, (current) => {
+      if (!current) return current;
+
+      const updatedTask: TaskType = {
+        ...task,
+        status: newStatus,
+      };
+
+      console.log({ current, previousStatus });
+
       const sourceTasks = current.columns[previousStatus].filter(
         (item) => item.task_id !== task.task_id,
       );
+
       const targetTasks = [
         updatedTask,
         ...current.columns[newStatus].filter(
@@ -190,10 +179,17 @@ export default function Dashboard() {
         priority: task.priority,
       });
 
-      if (!result.success) setDashboard(previousDashboard);
-    } catch (err) {
-      setDashboard(previousDashboard);
-      console.error("Failed to update task status", err);
+      if (!result.success) {
+        queryClient.setQueryData(queryKeys.dashboard, previousDashboard);
+      }
+    } catch (error) {
+      queryClient.setQueryData(queryKeys.dashboard, previousDashboard);
+
+      console.error("Failed to update task status", error);
+    } finally {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.dashboard,
+      });
     }
   };
 

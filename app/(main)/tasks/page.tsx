@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight, ListChecks } from "lucide-react";
 
@@ -15,8 +15,8 @@ import {
 import { TaskList } from "@/components/tasks/task-list";
 import { useProject } from "@/context/ProjectContext";
 import { useTask } from "@/context/TaskContext";
-import { useTasksQuery } from "@/hooks/useTasksQuery";
 import TaskType from "@/lib/types/task";
+import { useTasksQuery } from "@/hooks/queries/useTasksQuery";
 
 const PAGE_SIZE = 10;
 
@@ -25,7 +25,6 @@ export default function AllTasksPage() {
 
   const { createTask, updateTask, deleteTask } = useTask();
   const { projects } = useProject();
-  const { tasks, pagination, isLoading, fetchTasks } = useTasksQuery();
 
   const initialSearch = searchParams.get("search")?.trim() ?? "";
 
@@ -37,6 +36,16 @@ export default function AllTasksPage() {
   const [sort, setSort] = useState<SortOption>("due_asc");
   const [page, setPage] = useState(1);
   const [editingTask, setEditingTask] = useState<TaskType | null>(null);
+
+  const { tasks, pagination, isLoading } = useTasksQuery({
+    search: debouncedSearch,
+    status,
+    priorities,
+    project_id: projectId,
+    sort,
+    page,
+    limit: PAGE_SIZE,
+  });
 
   const hasActiveFilters =
     search.trim() !== "" ||
@@ -51,8 +60,6 @@ export default function AllTasksPage() {
     setProjectId(undefined);
   };
 
-  // keep the search box in sync if the user comes from the header search
-  // again while already on this page (client-side navigation won't remount)
   useEffect(() => {
     const id = setTimeout(() =>
       setSearch(searchParams.get("search")?.trim() ?? ""),
@@ -61,36 +68,16 @@ export default function AllTasksPage() {
     clearTimeout(id);
   }, [searchParams]);
 
-  // debounce the raw search input so we don't hit the API on every keystroke
   useEffect(() => {
     const id = setTimeout(() => setDebouncedSearch(search.trim()), 400);
     return () => clearTimeout(id);
   }, [search]);
 
-  // any filter change should jump back to page 1
   useEffect(() => {
     const id = setTimeout(() => setPage(1));
 
     clearTimeout(id);
   }, [debouncedSearch, status, priorities, projectId, sort]);
-
-  const runQuery = useCallback(
-    () =>
-      fetchTasks({
-        search: debouncedSearch,
-        status,
-        priorities,
-        project_id: projectId,
-        sort,
-        page,
-        limit: PAGE_SIZE,
-      }),
-    [debouncedSearch, fetchTasks, page, priorities, projectId, sort, status],
-  );
-
-  useEffect(() => {
-    void runQuery();
-  }, [debouncedSearch, status, priorities, projectId, sort, page, runQuery]);
 
   const handleStatusChange = async (
     task: TaskType,
@@ -106,7 +93,6 @@ export default function AllTasksPage() {
         status: newStatus,
         priority: task.priority,
       });
-      await runQuery();
     } catch (err) {
       console.error("Failed to update task status", err);
     }
@@ -115,22 +101,9 @@ export default function AllTasksPage() {
   const handleDelete = async (task: TaskType) => {
     try {
       await deleteTask({ task_id: task.task_id });
-      await runQuery();
     } catch (err) {
       console.error("Failed to delete task", err);
     }
-  };
-
-  const handleCreate = async (data: Parameters<typeof createTask>[0]) => {
-    const result = await createTask(data);
-    if (result.success) await runQuery();
-    return result;
-  };
-
-  const handleSave = async (data: Parameters<typeof updateTask>[0]) => {
-    const result = await updateTask(data);
-    if (result.success) await runQuery();
-    return result;
   };
 
   return (
@@ -147,7 +120,7 @@ export default function AllTasksPage() {
               : `${pagination.total} task${pagination.total === 1 ? "" : "s"} found`}
           </p>
         </div>
-        <NewTask onCreate={handleCreate} />
+        <NewTask onCreate={createTask} />
       </div>
 
       <TaskFilters
@@ -208,7 +181,7 @@ export default function AllTasksPage() {
         task={editingTask}
         open={editingTask !== null}
         onOpenChange={(open) => !open && setEditingTask(null)}
-        onSave={handleSave}
+        onSave={updateTask}
       />
     </div>
   );

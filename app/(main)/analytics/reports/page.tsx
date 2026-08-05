@@ -5,7 +5,7 @@ import { FileText } from "lucide-react";
 import { BreakdownReportTable } from "@/components/analytics/breakdown-report-table";
 import { CreationTrendTable } from "@/components/analytics/creation-trend-table";
 import { ProjectReportTable } from "@/components/analytics/project-report-table";
-import { useAnalytics } from "@/context/AnalyticsContext";
+import { useAnalyticsQuery } from "@/hooks/queries/useAnalyticsQuery";
 import {
   PRIORITY_CONFIG,
   PRIORITY_ORDER,
@@ -14,7 +14,7 @@ import {
 } from "@/lib/analytics-config";
 
 export default function AnalyticsReportsPage() {
-  const { analytics, isLoading } = useAnalytics();
+  const { analytics, isLoading } = useAnalyticsQuery();
 
   const statusRows = STATUS_ORDER.map((key) => ({
     key,
