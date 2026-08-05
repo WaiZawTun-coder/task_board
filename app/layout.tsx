@@ -59,13 +59,15 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen flex flex-col">
-        <QueryProvider>
-          <AuthProvider>
-            <ThemeProvider>{children}</ThemeProvider>
-          </AuthProvider>
-        </QueryProvider>
-        <Analytics />
-        <SpeedInsights />
+        <main>
+          <QueryProvider>
+            <AuthProvider>
+              <ThemeProvider>{children}</ThemeProvider>
+            </AuthProvider>
+          </QueryProvider>
+          <Analytics />
+          <SpeedInsights />
+        </main>
       </body>
     </html>
   );

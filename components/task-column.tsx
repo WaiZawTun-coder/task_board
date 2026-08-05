@@ -39,7 +39,7 @@ export function TaskColumn({
       <div className="mb-3 flex items-center justify-between px-1">
         <div className="flex items-center gap-2">
           <span className={`h-2.5 w-2.5 rounded-full ${dotClass}`} />
-          <h3 className="text-sm font-medium">{title}</h3>
+          <span className="text-sm font-medium">{title}</span>
         </div>
         <Badge variant="outline">{totalCount}</Badge>
       </div>

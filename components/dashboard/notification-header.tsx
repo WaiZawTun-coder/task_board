@@ -20,7 +20,7 @@ const NotificationHeader = () => {
 
   return (
     <Popover>
-      <PopoverTrigger className="relative">
+      <PopoverTrigger className="relative" aria-label="notification">
         <Bell className="cursor-pointer" />
         {unreadCount > 0 && (
           <Badge

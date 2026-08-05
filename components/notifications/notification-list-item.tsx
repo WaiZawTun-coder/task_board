@@ -99,7 +99,10 @@ export function NotificationListItem({
       </div>
 
       <DropdownMenu>
-        <DropdownMenuTrigger className="shrink-0 cursor-pointer text-muted-foreground">
+        <DropdownMenuTrigger
+          className="shrink-0 cursor-pointer text-muted-foreground"
+          aria-label="options"
+        >
           <MoreVertical className="h-4 w-4" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">

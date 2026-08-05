@@ -22,12 +22,10 @@ import { useTask } from "@/context/TaskContext";
 import TaskType from "@/lib/types/task";
 
 import { TaskColumn } from "@/components/task-column";
-import { DragDropProvider, DragEndEvent, DragOverlay } from "@dnd-kit/react";
-import { useCallback, useEffect, useState } from "react";
-import { useApi } from "@/utilities/api";
 import { useDashboardQuery } from "@/hooks/queries/useDashboardQuery";
-import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query-keys";
+import { DragDropProvider, DragEndEvent, DragOverlay } from "@dnd-kit/react";
+import { useQueryClient } from "@tanstack/react-query";
 
 type Stat = {
   label: string;

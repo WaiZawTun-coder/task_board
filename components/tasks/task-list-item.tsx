@@ -161,7 +161,7 @@ export function TaskListItem({
         </DropdownMenu>
 
         <DropdownMenu>
-          <DropdownMenuTrigger className="cursor-pointer">
+          <DropdownMenuTrigger className="cursor-pointer" aria-label="actions">
             {/* <Button variant="ghost" size="icon-sm"> */}
             <MoreVertical className="h-4 w-4" />
             {/* </Button> */}
