@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarIcon, Loader2, Plus } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/UI/button";
@@ -16,23 +16,14 @@ import {
 import { Input } from "@/components/UI/input";
 import { Textarea } from "@/components/UI/textarea";
 import { useProject } from "@/context/ProjectContext";
-import { cn } from "@/lib/utils";
-import { format } from "date-fns";
-import {
-  Combobox,
-  ComboboxContent,
-  ComboboxEmpty,
-  ComboboxInput,
-  ComboboxItem,
-  ComboboxList,
-} from "./UI/combobox";
-import { Popover, PopoverContent, PopoverTrigger } from "./UI/popover";
-import { TimePicker } from "./time-picker";
 import dynamic from "next/dynamic";
 
-const Calendar = dynamic(
-  () => import("@/components/UI/calendar").then((m) => m.Calendar),
-  { ssr: false },
+const NewTaskFields = dynamic(
+  () => import("./newTaskFields").then((m) => m.NewTaskFields),
+  {
+    ssr: false,
+    loading: () => <div className="h-32 animate-pulse rounded-lg bg-muted" />,
+  },
 );
 
 type NewTaskFormData = {
@@ -187,101 +178,24 @@ const NewTask = ({
             />
           </div>
 
-          <div className="space-y-1.5">
-            <label htmlFor="task-project" className="text-sm font-medium">
-              Project
-            </label>
-            <Combobox
-              value={
-                selectedProject
-                  ? projects.filter(
-                      (project) => project.project_id === selectedProject,
-                    )[0]?.title
-                  : undefined
-              }
-              items={projects.map((project) => project.title)}
-              onValueChange={(item) =>
-                handleChange(
-                  "project_id",
-                  projects.filter((project) => project.title === item)[0]
-                    ?.project_id,
-                )
-              }
-            >
-              <ComboboxInput placeholder="Select a project" />
-              <ComboboxContent>
-                {isProjectsLoading && (
-                  <ComboboxList>
-                    <ComboboxItem>
-                      Loading... <Loader2 className="h-4 w-4 animate-spin" />
-                    </ComboboxItem>
-                  </ComboboxList>
-                )}
-                <ComboboxEmpty className="flex flex-col">
-                  No items found
-                  {/* <NewProject /> */}
-                </ComboboxEmpty>
-                <ComboboxList>
-                  {(item) => {
-                    return (
-                      <ComboboxItem key={item} value={item}>
-                        {item}
-                      </ComboboxItem>
-                    );
-                  }}
-                </ComboboxList>
-              </ComboboxContent>
-            </Combobox>
-          </div>
-
-          <div className="space-y-1.5">
-            <label htmlFor="task-due-date" className="text-sm font-medium">
-              Due date
-            </label>
-
-            <div className="flex gap-2">
-              <Popover>
-                <PopoverTrigger
-                  className={cn(
-                    "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
-                    "h-8 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
-                    "flex flex-1 min-w-0 justify-start text-left font-normal",
-                    "group/button cursor-pointer inline-flex shrink-0 items-center justify-start rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-                    !formData.due && "text-muted-foreground",
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
-                  <span className="truncate">
-                    {formData.due ? format(formData.due, "PPP") : "Pick a date"}
-                  </span>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={formData.due}
-                    onSelect={handleDateSelect}
-                    disabled={(date) => {
-                      const today = new Date();
-                      today.setHours(0, 0, 0, 0);
-                      return date < today;
-                    }}
-                  />
-                </PopoverContent>
-              </Popover>
-
-              <TimePicker
-                hour={formData.due?.getHours()}
-                minute={formData.due?.getMinutes()}
-                onChange={({ hour, minute }) => {
-                  setFormData((prev) => {
-                    const base = prev.due ? new Date(prev.due) : new Date();
-                    base.setHours(hour, minute, 0, 0);
-                    return { ...prev, due: base };
-                  });
-                }}
-              />
-            </div>
-          </div>
+          {open && (
+            <NewTaskFields
+              projects={projects}
+              isProjectsLoading={isProjectsLoading}
+              selectedProject={selectedProject}
+              projectId={formData.project_id}
+              due={formData.due}
+              onProjectChange={(id) => handleChange("project_id", id)}
+              onDateSelect={handleDateSelect}
+              onTimeChange={({ hour, minute }) => {
+                setFormData((prev) => {
+                  const base = prev.due ? new Date(prev.due) : new Date();
+                  base.setHours(hour, minute, 0, 0);
+                  return { ...prev, due: base };
+                });
+              }}
+            />
+          )}
 
           {error && (
             <p className="text-xs font-medium text-destructive">{error}</p>

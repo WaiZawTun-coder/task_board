@@ -18,7 +18,12 @@ import { Textarea } from "./UI/textarea";
 
 const ColorPicker = dynamic(
   () => import("@/components/UI/color-picker").then((m) => m.ColorPicker),
-  { ssr: false },
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-9 w-55 animate-pulse rounded-lg bg-muted" />
+    ),
+  },
 );
 
 type NewProjectFormData = {
@@ -147,6 +152,7 @@ const NewProject = ({
         variant={variant}
         size="default"
         onClick={() => handleOpenChange(true)}
+        aria-label={text.trim() !== "" ? text.trim() : "New Project"}
       >
         <Plus className="h-4 w-4" />
         {text.trim() !== "" && text}
@@ -193,13 +199,15 @@ const NewProject = ({
             <label htmlFor={`${formId}_color`} className="text-sm font-medium">
               Project Color
             </label>
-            <ColorPicker
-              id={`${formId}_color`}
-              value={formData.color_hex}
-              onChange={(e) => handleChange("color_hex", e)}
-              className="w-full"
-              error={errorTarget.includes("color_hex")}
-            />
+            {open && (
+              <ColorPicker
+                id={`${formId}_color`}
+                value={formData.color_hex}
+                onChange={(e) => handleChange("color_hex", e)}
+                className="w-full"
+                error={errorTarget.includes("color_hex")}
+              />
+            )}
           </div>
 
           {error && (
