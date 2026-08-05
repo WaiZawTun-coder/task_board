@@ -212,7 +212,7 @@ export default function ProjectDetailPage() {
         <p className="text-sm text-destructive">
           {error || "Unable to load this project."}
         </p>
-        <Button variant="outline" onClick={refetch}>
+        <Button variant="outline" onClick={() => refetch()}>
           Try again
         </Button>
       </div>
