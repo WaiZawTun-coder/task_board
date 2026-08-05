@@ -4,7 +4,7 @@ import { useDroppable } from "@dnd-kit/react";
 import { Badge } from "@/components/UI/badge";
 import { cn } from "@/lib/utils";
 import TaskType from "@/lib/types/task";
-import { TaskCard } from "./task-card";
+import TaskCard from "./task-card";
 
 const MAX_VISIBLE_TASKS = 5;
 

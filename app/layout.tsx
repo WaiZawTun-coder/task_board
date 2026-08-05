@@ -4,7 +4,7 @@ import { QueryProvider } from "@/providers/queryProvider";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import type { Metadata } from "next";
-import { DM_Sans, Geist, Geist_Mono, Roboto } from "next/font/google";
+import { DM_Sans, Roboto } from "next/font/google";
 import { ThemeProvider } from "../providers/themeProvider";
 import "./globals.css";
 
@@ -58,13 +58,13 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="min-h-screen flex flex-col">
-        <main>
-          <QueryProvider>
-            <AuthProvider>
+      <body>
+        <main className="min-h-screen flex flex-col">
+          <AuthProvider>
+            <QueryProvider>
               <ThemeProvider>{children}</ThemeProvider>
-            </AuthProvider>
-          </QueryProvider>
+            </QueryProvider>
+          </AuthProvider>
           <Analytics />
           <SpeedInsights />
         </main>

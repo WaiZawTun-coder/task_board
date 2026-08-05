@@ -3,6 +3,7 @@
 import { useDraggable } from "@dnd-kit/react";
 import { cn } from "@/lib/utils";
 import TaskType from "@/lib/types/task";
+import { memo } from "react";
 
 const formatDueDate = (task: TaskType) => {
   if (!task.due) return "No due date";
@@ -36,3 +37,5 @@ export function TaskCard({ task }: { task: TaskType }) {
     </div>
   );
 }
+
+export default memo(TaskCard);
