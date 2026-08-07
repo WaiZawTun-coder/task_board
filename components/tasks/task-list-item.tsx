@@ -8,6 +8,7 @@ import { Button } from "@/components/UI/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -16,6 +17,7 @@ import {
 import { cn } from "@/lib/utils";
 import TaskType from "@/lib/types/task";
 import ProjectType from "@/lib/types/project";
+import Link from "next/link";
 
 const statusConfig: Record<
   TaskType["status"],
@@ -94,7 +96,12 @@ export function TaskListItem({
     <div className="flex flex-col gap-3 rounded-lg border bg-background p-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <p className="truncate text-sm font-medium">{task.title}</p>
+          <Link
+            href={`/tasks/${task.task_id}`}
+            className="truncate text-sm font-medium hover:underline"
+          >
+            {task.title}
+          </Link>
           {project && (
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
               <span
@@ -145,18 +152,20 @@ export function TaskListItem({
             </Badge>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Move to</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {(Object.keys(statusConfig) as TaskType["status"][]).map(
-              (status) => (
-                <DropdownMenuItem
-                  key={status}
-                  onClick={() => onStatusChange(status)}
-                >
-                  {statusConfig[status].label}
-                </DropdownMenuItem>
-              ),
-            )}
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>Move to</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {(Object.keys(statusConfig) as TaskType["status"][]).map(
+                (status) => (
+                  <DropdownMenuItem
+                    key={status}
+                    onClick={() => onStatusChange(status)}
+                  >
+                    {statusConfig[status].label}
+                  </DropdownMenuItem>
+                ),
+              )}
+            </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
 

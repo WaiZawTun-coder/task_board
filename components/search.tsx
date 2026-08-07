@@ -28,11 +28,16 @@ const GlobalSearch = ({ className = "" }: { className?: string }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const goToTasks = (query: string) => {
+  const gotToSearch = (query: string) => {
     const trimmed = query.trim();
     router.push(
       trimmed ? `/tasks?search=${encodeURIComponent(trimmed)}` : "/tasks",
     );
+  };
+
+  const goToTask = (taskId: number) => {
+    router.push(`/tasks/${taskId}`);
+    setIsOpen(false);
   };
 
   const goToProject = (projectId: number) => {
@@ -129,7 +134,7 @@ const GlobalSearch = ({ className = "" }: { className?: string }) => {
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();
-              goToTasks(search);
+              gotToSearch(search);
             } else if (e.key === "Escape") {
               setIsOpen(false);
             }
@@ -189,6 +194,7 @@ const GlobalSearch = ({ className = "" }: { className?: string }) => {
                 <button
                   key={project.project_id}
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => goToProject(project.project_id)}
                   className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-accent hover:text-accent-foreground"
                 >
@@ -211,7 +217,8 @@ const GlobalSearch = ({ className = "" }: { className?: string }) => {
                 <button
                   key={task.task_id}
                   type="button"
-                  onClick={() => goToTasks(task.title)}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => goToTask(task.task_id)}
                   className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-accent hover:text-accent-foreground"
                 >
                   <ListChecks className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
@@ -224,7 +231,8 @@ const GlobalSearch = ({ className = "" }: { className?: string }) => {
           {hasResults && (
             <button
               type="button"
-              onClick={() => goToTasks(search)}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => gotToSearch(search)}
               className="mt-1 flex w-full items-center gap-2 rounded-md border-t px-2 py-1.5 text-left text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground"
             >
               See all results for &quot;{search.trim()}&quot;

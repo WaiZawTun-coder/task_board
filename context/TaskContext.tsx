@@ -72,6 +72,7 @@ const reconcileTaskCaches = (
 ) => {
   queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
   queryClient.invalidateQueries({ queryKey: ["tasks"] });
+  queryClient.invalidateQueries({ queryKey: ["task"] });
 };
 
 export const TaskProvider = ({ children }: { children: React.ReactNode }) => {
@@ -97,6 +98,7 @@ export const TaskProvider = ({ children }: { children: React.ReactNode }) => {
     // guess at, so just invalidate everything it could affect.
     queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
     queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    queryClient.invalidateQueries({ queryKey: ["task"] });
     invalidateDateDependentQueries(queryClient);
 
     return data;

@@ -4,6 +4,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/UI/tabs";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
@@ -60,18 +61,20 @@ export function NotificationFilters({
           {TYPE_LABELS[type]}
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuLabel>Filter by type</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuRadioGroup
-            value={type}
-            onValueChange={(value) => onTypeChange(value as TypeFilter)}
-          >
-            {(Object.keys(TYPE_LABELS) as TypeFilter[]).map((option) => (
-              <DropdownMenuRadioItem key={option} value={option}>
-                {TYPE_LABELS[option]}
-              </DropdownMenuRadioItem>
-            ))}
-          </DropdownMenuRadioGroup>
+          <DropdownMenuGroup>
+            <DropdownMenuLabel>Filter by type</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuRadioGroup
+              value={type}
+              onValueChange={(value) => onTypeChange(value as TypeFilter)}
+            >
+              {(Object.keys(TYPE_LABELS) as TypeFilter[]).map((option) => (
+                <DropdownMenuRadioItem key={option} value={option}>
+                  {TYPE_LABELS[option]}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
